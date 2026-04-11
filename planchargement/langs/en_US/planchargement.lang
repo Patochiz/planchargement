@@ -1,0 +1,91 @@
+# Module planchargement - English translations
+# Copyright (C) 2024 Patochiz
+
+# Module
+Module500100Name=Loading Plan
+Module500100Desc=Truck loading plan management
+PlanchargementDescription=Truck loading plan management
+PlanchargementDescriptionLong=Truck loading planning module with handling unit management and 2D placement
+
+# Menu
+PlanchargementList=Loading Plans
+PlanchargementNew=New Loading Plan
+PlanchargementCard=Loading Plan Card
+
+# Object: Chargement
+PlanchargementChargement=Loading Plan
+PlanchargementDateChargement=Loading Date
+PlanchargementCamionType=Truck Type
+PlanchargementPoidsTotal=Total Weight
+PlanchargementStatut=Status
+
+# Statuses
+PlanchargementStatusDraft=Draft
+PlanchargementStatusValid=Validated
+PlanchargementStatusDeparted=Departed
+PlanchargementStatusCancelled=Cancelled
+
+# Object: CamionType
+PlanchargementCamionTypeCard=Truck Type Card
+PlanchargementCamionTypeList=Truck Types
+PlanchargementCamionTypeNew=New Truck Type
+PlanchargementLongueurUtile=Usable Length (mm)
+PlanchargementLargeurUtile=Usable Width (mm)
+PlanchargementHauteurUtile=Usable Height (mm)
+PlanchargementChargeUtile=Payload Capacity (kg)
+
+# Object: UmType
+PlanchargementUmType=Handling Unit Type
+PlanchargementUmTypeCard=Handling Unit Type Card
+PlanchargementUmTypeList=Handling Unit Types
+PlanchargementUmTypeNew=New Handling Unit Type
+PlanchargementLongueur=Length (mm)
+PlanchargementLargeur=Width (mm)
+PlanchargementHauteur=Height (mm)
+PlanchargementChargeMax=Max Load (kg)
+PlanchargementGerbable=Stackable
+
+# Object: UM
+PlanchargementUm=Handling Unit
+PlanchargementUmList=Handling Units
+PlanchargementPosX=Position X (mm)
+PlanchargementPosY=Position Y (mm)
+PlanchargementRotation=Rotation
+PlanchargementUmParent=Parent UM
+
+# Object: Commande link
+PlanchargementCommandes=Linked Orders
+PlanchargementAddCommande=Link an Order
+PlanchargementRemoveCommande=Unlink Order
+
+# Object: Colis
+PlanchargementColis=Packages
+PlanchargementColisNonAffectes=Unassigned Packages
+PlanchargementQtyAffectee=Assigned Qty
+PlanchargementQtyRestante=Remaining Qty
+
+# Actions
+PlanchargementValidate=Validate Loading Plan
+PlanchargementSetDeparted=Mark as Departed
+PlanchargementCancel=Cancel Loading Plan
+PlanchargementBackToDraft=Set Back to Draft
+
+# Permissions
+PlanchargementPermRead=Read loading plans
+PlanchargementPermWrite=Create/modify loading plans
+PlanchargementPermDelete=Delete loading plans
+PlanchargementPermAdmin=Administer loading plan module
+
+# Errors
+PlanchargementErrorAlreadyValid=This loading plan is already validated
+PlanchargementErrorCannotDeleteValid=Cannot delete a validated loading plan
+PlanchargementErrorColisStillAssigned=Packages from this order are still assigned to handling units
+PlanchargementErrorTypeInUse=This type is used by existing loading plans
+PlanchargementErrorOverweight=Handling unit max load exceeded
+PlanchargementErrorQuantityExceedsMultiplier=Assigned quantity exceeds package multiplier
+PlanchargementErrorCommandeAlreadyLinked=This order is already linked to this loading plan
+
+# Admin
+PlanchargementSetup=Loading Plan Module Setup
+PlanchargementAbout=About Loading Plan Module
+PlanchargementNumberingModule=Loading plan numbering module
