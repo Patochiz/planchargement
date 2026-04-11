@@ -14,13 +14,29 @@
  *          Generates refs like CH2604-0001 (CH + YYMM + dash + 4-digit counter)
  */
 
-require_once DOL_DOCUMENT_ROOT.'/core/modules/CommonNumRefGenerator.class.php';
+// Load CommonNumRefGenerator if available (not present in all Dolibarr installs)
+$numrefFile = DOL_DOCUMENT_ROOT.'/core/modules/CommonNumRefGenerator.class.php';
+if (file_exists($numrefFile)) {
+	require_once $numrefFile;
+}
 
 /**
  * Class mod_chargement_standard
  * Standard numbering for loading plans
+ * Extends CommonNumRefGenerator when available, standalone otherwise.
  */
-class mod_chargement_standard extends CommonNumRefGenerator
+if (class_exists('CommonNumRefGenerator')) {
+	// @phan-suppress-next-line PhanRedefineClassInternal
+	class mod_chargement_standard_parent extends CommonNumRefGenerator {}
+} else {
+	// Minimal stub when CommonNumRefGenerator is not available
+	class mod_chargement_standard_parent {
+		/** @var string */
+		public $error = '';
+	}
+}
+
+class mod_chargement_standard extends mod_chargement_standard_parent
 {
 	/**
 	 * Dolibarr version of the loaded document
