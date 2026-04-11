@@ -87,5 +87,6 @@ PlanchargementErrorCommandeAlreadyLinked=This order is already linked to this lo
 
 # Admin
 PlanchargementSetup=Loading Plan Module Setup
+PlanchargementSetupDesc=General configuration of the loading plan module
 PlanchargementAbout=About Loading Plan Module
 PlanchargementNumberingModule=Loading plan numbering module

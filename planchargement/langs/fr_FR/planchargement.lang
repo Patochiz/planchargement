@@ -87,5 +87,6 @@ PlanchargementErrorCommandeAlreadyLinked=Cette commande est déjà rattachée à
 
 # Admin
 PlanchargementSetup=Configuration du module Plan de chargement
+PlanchargementSetupDesc=Configuration générale du module plan de chargement
 PlanchargementAbout=À propos du module Plan de chargement
 PlanchargementNumberingModule=Module de numérotation des chargements
