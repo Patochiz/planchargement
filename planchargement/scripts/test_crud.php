@@ -1,49 +1,13 @@
-#!/usr/bin/env php
 <?php
 /* Copyright (C) 2024 Patochiz
  *
- * CLI test script for planchargement CRUD classes.
- * Run from Dolibarr root: php htdocs/custom/planchargement/scripts/test_crud.php
- * Or from module dir:     php scripts/test_crud.php
+ * Test script for planchargement CRUD classes.
+ * Can be run via browser: https://your-dolibarr/custom/planchargement/scripts/test_crud.php
+ * Or via CLI:              php scripts/test_crud.php
+ * Add ?cleanup=1 (browser) or --cleanup (CLI) to delete test data after tests.
  */
 
-// Detect Dolibarr main.inc.php
-$res = 0;
-$path_to_main = '';
-$trydirs = array(
-	__DIR__.'/../../../..',         // htdocs/custom/planchargement/scripts -> htdocs
-	__DIR__.'/../../..',            // alternate location
-	__DIR__.'/../../../htdocs',     // repo root
-);
-foreach ($trydirs as $dir) {
-	$try = realpath($dir.'/main.inc.php');
-	if ($try && file_exists($try)) {
-		$path_to_main = $try;
-		break;
-	}
-	$try = realpath($dir.'/master.inc.php');
-	if ($try && file_exists($try)) {
-		$path_to_main = $try;
-		break;
-	}
-}
-
-if (empty($path_to_main)) {
-	echo "ERROR: Could not find Dolibarr main.inc.php\n";
-	echo "Please run this script from within a Dolibarr installation.\n";
-	echo "Expected location: htdocs/custom/planchargement/scripts/test_crud.php\n";
-	echo "\nAlternatively, set the DOL_DOCUMENT_ROOT environment variable.\n";
-
-	// If DOL_DOCUMENT_ROOT env is set, try that
-	$env_root = getenv('DOL_DOCUMENT_ROOT');
-	if ($env_root && file_exists($env_root.'/main.inc.php')) {
-		$path_to_main = $env_root.'/main.inc.php';
-	} else {
-		exit(1);
-	}
-}
-
-// Define constants to run in CLI mode
+// Define constants BEFORE main.inc.php
 if (!defined('NOREQUIREMENU')) {
 	define('NOREQUIREMENU', '1');
 }
@@ -60,9 +24,45 @@ if (!defined('NOSESSION')) {
 	define('NOSESSION', '1');
 }
 
+// Detect Dolibarr main.inc.php
+$path_to_main = '';
+$trydirs = array(
+	__DIR__.'/../../../..',           // htdocs/custom/planchargement/scripts -> htdocs
+	__DIR__.'/../../..',              // alternate depth
+	__DIR__.'/../../../htdocs',       // repo root / htdocs
+	__DIR__.'/../..',                 // custom/planchargement/scripts -> custom -> htdocs (2 levels)
+);
+foreach ($trydirs as $dir) {
+	$try = realpath($dir.'/main.inc.php');
+	if ($try && file_exists($try)) {
+		$path_to_main = $try;
+		break;
+	}
+}
+
+if (empty($path_to_main)) {
+	// Last resort: try relative include that OVH resolves
+	$try = @realpath(__DIR__.'/../../../main.inc.php');
+	if ($try && file_exists($try)) {
+		$path_to_main = $try;
+	}
+}
+
+if (empty($path_to_main)) {
+	header('Content-Type: text/plain; charset=utf-8');
+	echo "ERROR: Could not find Dolibarr main.inc.php\n";
+	echo "Tried from: ".__DIR__."\n";
+	exit(1);
+}
+
 require_once $path_to_main;
 require_once DOL_DOCUMENT_ROOT.'/core/class/commonobject.class.php';
 require_once DOL_DOCUMENT_ROOT.'/user/class/user.class.php';
+
+// Output as plain text for browser readability
+if (php_sapi_name() !== 'cli') {
+	header('Content-Type: text/plain; charset=utf-8');
+}
 
 dol_include_once('/planchargement/class/camiontype.class.php');
 dol_include_once('/planchargement/class/umtype.class.php');
@@ -337,7 +337,7 @@ echo "\n";
 // 7. Cleanup
 // ============================================================
 
-$do_cleanup = in_array('--cleanup', $argv ?? array());
+$do_cleanup = in_array('--cleanup', $argv ?? array()) || !empty($_GET['cleanup']);
 
 if ($do_cleanup) {
 	echo "--- Cleanup ---\n";
@@ -393,7 +393,11 @@ echo "\n";
 echo "=============================================================\n";
 
 if (!$do_cleanup) {
-	echo "\nTip: Run with --cleanup to delete test data after tests.\n";
+	if (php_sapi_name() === 'cli') {
+		echo "\nTip: Run with --cleanup to delete test data after tests.\n";
+	} else {
+		echo "\nTip: Add ?cleanup=1 to the URL to delete test data after tests.\n";
+	}
 }
 
 exit($test_fail > 0 ? 1 : 0);
