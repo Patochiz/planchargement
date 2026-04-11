@@ -240,7 +240,7 @@ $morejsarray = array();
 if ($tab == 'composition' && $object->id > 0) {
 	$morehead = '<link rel="stylesheet" href="'.dol_buildpath('/planchargement/css/planchargement.css', 1).'">';
 	$morejsarray = array(
-		dol_buildpath('/planchargement/js/planchargement.js', 1),
+		'/planchargement/js/planchargement.js',
 	);
 }
 
