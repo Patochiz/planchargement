@@ -1,0 +1,233 @@
+/* Plan de chargement - Composition UI styles */
+
+/* Top bar */
+.planchargement-topbar {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	padding: 10px 0;
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+}
+
+/* Two-column layout */
+.planchargement-columns {
+	display: flex;
+	gap: 20px;
+}
+.planchargement-col-left,
+.planchargement-col-right {
+	flex: 1;
+	min-height: 300px;
+	border: 1px solid #dee2e6;
+	border-radius: 4px;
+	padding: 10px;
+	overflow-y: auto;
+	max-height: 600px;
+}
+.planchargement-col-left {
+	background: #fafbfc;
+}
+
+/* Order groups in left column */
+.planchargement-order-group {
+	margin: 8px 0;
+	padding: 8px;
+	border-radius: 4px;
+	background: #fff;
+}
+.planchargement-order-group h4 {
+	margin: 0 0 6px 0;
+	font-size: 0.9em;
+	color: #333;
+}
+
+/* Draggable colis */
+.planchargement-colis {
+	padding: 6px 10px;
+	margin: 4px 0;
+	background: #f8f9fa;
+	border: 1px solid #dee2e6;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 0.85em;
+}
+.planchargement-colis.draggable {
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+}
+.planchargement-colis.draggable:active {
+	cursor: grabbing;
+}
+.planchargement-colis .colis-info {
+	flex: 1;
+}
+.planchargement-colis .qty-to-assign {
+	width: 50px;
+	text-align: center;
+}
+
+/* UM cards in right column */
+.planchargement-um {
+	margin: 8px 0;
+	border: 1px solid #bdc3c7;
+	border-radius: 4px;
+	background: #fff;
+}
+.planchargement-um-header {
+	padding: 8px 12px;
+	background: #ecf0f1;
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-radius: 3px 3px 0 0;
+	font-size: 0.9em;
+}
+.planchargement-um-header .um-info {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+.planchargement-um-header .um-ref {
+	font-weight: bold;
+}
+.planchargement-um-header .um-weight {
+	color: #666;
+}
+.planchargement-um-header .um-actions {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+.planchargement-um-contents {
+	padding: 6px 12px;
+	border-top: 1px solid #dee2e6;
+}
+
+/* Assigned colis in UM */
+.planchargement-assigned-colis {
+	padding: 4px 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.85em;
+	border-bottom: 1px dotted #eee;
+}
+.planchargement-assigned-colis:last-child {
+	border-bottom: none;
+}
+
+/* Drop zone states */
+.planchargement-um.drop-active {
+	border: 2px dashed #3498db;
+}
+.planchargement-um.drop-target {
+	background-color: rgba(52, 152, 219, 0.08);
+	border-color: #2980b9;
+}
+
+/* Overweight warning */
+.planchargement-um.overweight .planchargement-um-header {
+	background-color: #f8d7da;
+	border-color: #f5c6cb;
+}
+
+/* Weight progress bar */
+.weight-progress {
+	width: 200px;
+	height: 18px;
+	background: #e9ecef;
+	border-radius: 4px;
+	overflow: hidden;
+	display: inline-block;
+	vertical-align: middle;
+}
+.weight-progress-bar {
+	height: 100%;
+	transition: width 0.3s;
+	border-radius: 4px;
+}
+.weight-progress-bar.ok {
+	background: #2ecc71;
+}
+.weight-progress-bar.warning {
+	background: #f39c12;
+}
+.weight-progress-bar.danger {
+	background: #e74c3c;
+}
+
+/* Empty state */
+.planchargement-empty {
+	text-align: center;
+	padding: 30px;
+	color: #999;
+	font-style: italic;
+}
+
+/* Modal overlay */
+.planchargement-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.4);
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.planchargement-modal {
+	background: #fff;
+	border-radius: 6px;
+	padding: 20px;
+	min-width: 350px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.planchargement-modal h3 {
+	margin: 0 0 15px 0;
+}
+.planchargement-modal .modal-actions {
+	margin-top: 15px;
+	text-align: right;
+}
+
+/* Responsive: stack columns on small screens */
+@media (max-width: 768px) {
+	.planchargement-columns {
+		flex-direction: column;
+	}
+	.planchargement-col-left,
+	.planchargement-col-right {
+		max-height: 400px;
+	}
+}
+
+/* Button styles matching Dolibarr */
+.btn-delete-um {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #c0392b;
+	font-size: 1em;
+	padding: 2px 6px;
+}
+.btn-delete-um:hover {
+	color: #e74c3c;
+}
+.btn-remove-colis {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #999;
+	font-size: 0.9em;
+}
+.btn-remove-colis:hover {
+	color: #e74c3c;
+}

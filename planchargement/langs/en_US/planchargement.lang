@@ -90,3 +90,34 @@ PlanchargementSetup=Loading Plan Module Setup
 PlanchargementSetupDesc=General configuration of the loading plan module
 PlanchargementAbout=About Loading Plan Module
 PlanchargementNumberingModule=Loading plan numbering module
+
+# Tabs
+PlanchargementTabGeneral=General
+PlanchargementTabComposition=Composition
+PlanchargementTabPlan=Loading Plan
+
+# List
+PlanchargementNbCommandes=# Orders
+PlanchargementNbUms=# UMs
+
+# Card confirmations
+PlanchargementConfirmValidate=Are you sure you want to validate this loading plan?
+PlanchargementConfirmDelete=Are you sure you want to delete this loading plan?
+PlanchargementConfirmDeparted=Mark this loading plan as departed?
+PlanchargementConfirmCancel=Cancel this loading plan?
+PlanchargementConfirmReopen=Set this loading plan back to draft?
+PlanchargementSelectCommande=Select an order
+PlanchargementPlanPlaceholder=The plan view will be available in a future version.
+
+# Composition UI
+PlanchargementNewUm=New UM
+PlanchargementSelectUmType=Choose UM type
+PlanchargementDeleteUm=Delete UM
+PlanchargementConfirmDeleteUm=Delete this UM and its assigned packages?
+PlanchargementDragDropHint=Drag and drop packages to UMs
+PlanchargementWeightCapacity=Weight / Capacity
+PlanchargementNoColisAvailable=No packages available
+PlanchargementNoUmYet=No UMs created yet
+PlanchargementAllColisAssigned=All packages are assigned
+PlanchargementQtyToAssign=Qty to assign
+PlanchargementNbColis=# Packages
