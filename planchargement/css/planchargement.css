@@ -23,7 +23,7 @@
 	border-radius: 4px;
 	padding: 10px;
 	overflow-y: auto;
-	max-height: 600px;
+	max-height: 700px;
 }
 .planchargement-col-left {
 	background: #fafbfc;
@@ -42,15 +42,15 @@
 	color: #333;
 }
 
-/* Draggable colis */
+/* Draggable colis cards */
 .planchargement-colis {
-	padding: 6px 10px;
-	margin: 4px 0;
+	padding: 8px 10px;
+	margin: 6px 0;
 	background: #f8f9fa;
 	border: 1px solid #dee2e6;
 	border-radius: 4px;
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
 	gap: 8px;
 	font-size: 0.85em;
@@ -65,10 +65,54 @@
 }
 .planchargement-colis .colis-info {
 	flex: 1;
+	min-width: 0;
+}
+.planchargement-colis .colis-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 4px;
+}
+.planchargement-colis .colis-items {
+	margin-top: 4px;
+	padding-top: 4px;
+	border-top: 1px dotted #dee2e6;
+}
+.planchargement-colis .colis-item-line {
+	padding: 1px 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+.planchargement-colis .colis-item-line .item-label {
+	font-weight: 500;
+	color: #333;
+}
+.planchargement-colis .colis-item-line .item-details {
+	font-size: 0.9em;
+	white-space: nowrap;
+}
+.planchargement-colis .colis-assign {
+	flex-shrink: 0;
+	padding-top: 2px;
 }
 .planchargement-colis .qty-to-assign {
 	width: 50px;
 	text-align: center;
+}
+
+/* Inline UM creation */
+.planchargement-create-um {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 12px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #dee2e6;
+}
+.planchargement-create-um select {
+	flex: 1;
 }
 
 /* UM cards in right column */
@@ -111,15 +155,27 @@
 
 /* Assigned colis in UM */
 .planchargement-assigned-colis {
-	padding: 4px 0;
+	padding: 6px 0;
 	display: flex;
 	justify-content: space-between;
-	align-items: center;
+	align-items: flex-start;
 	font-size: 0.85em;
 	border-bottom: 1px dotted #eee;
 }
 .planchargement-assigned-colis:last-child {
 	border-bottom: none;
+}
+.assigned-colis-info {
+	flex: 1;
+	min-width: 0;
+}
+.assigned-colis-items {
+	margin-top: 2px;
+	font-size: 0.9em;
+}
+.assigned-colis-items .item-tag {
+	display: inline-block;
+	margin-right: 6px;
 }
 
 /* Drop zone states */
@@ -129,12 +185,6 @@
 .planchargement-um.drop-target {
 	background-color: rgba(52, 152, 219, 0.08);
 	border-color: #2980b9;
-}
-
-/* Overweight warning */
-.planchargement-um.overweight .planchargement-um-header {
-	background-color: #f8d7da;
-	border-color: #f5c6cb;
 }
 
 /* Weight progress bar */
@@ -170,34 +220,6 @@
 	font-style: italic;
 }
 
-/* Modal overlay */
-.planchargement-modal-overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background: rgba(0, 0, 0, 0.4);
-	z-index: 1000;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-.planchargement-modal {
-	background: #fff;
-	border-radius: 6px;
-	padding: 20px;
-	min-width: 350px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-.planchargement-modal h3 {
-	margin: 0 0 15px 0;
-}
-.planchargement-modal .modal-actions {
-	margin-top: 15px;
-	text-align: right;
-}
-
 /* Responsive: stack columns on small screens */
 @media (max-width: 768px) {
 	.planchargement-columns {
@@ -227,6 +249,7 @@
 	cursor: pointer;
 	color: #999;
 	font-size: 0.9em;
+	flex-shrink: 0;
 }
 .btn-remove-colis:hover {
 	color: #e74c3c;

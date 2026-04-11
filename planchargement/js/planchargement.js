@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	initDragDrop();
-	initNewUmButton();
 });
 
 // ========================================
@@ -126,7 +125,6 @@ function confirmCreateUm() {
 
 	ajaxPost(planchargement_ajax_url_create_um, params, function (data) {
 		if (data.success) {
-			closeNewUmModal();
 			window.location.reload();
 		} else {
 			alert(data.error || 'Error creating UM');
@@ -142,29 +140,6 @@ function toggleUmContents(umId) {
 	var el = document.getElementById('um-contents-' + umId);
 	if (el) {
 		el.style.display = (el.style.display === 'none') ? 'block' : 'none';
-	}
-}
-
-function initNewUmButton() {
-	var btn = document.getElementById('btn-new-um');
-	if (btn) {
-		btn.addEventListener('click', function () {
-			showNewUmModal();
-		});
-	}
-}
-
-function showNewUmModal() {
-	var modal = document.getElementById('modal-new-um');
-	if (modal) {
-		modal.style.display = 'flex';
-	}
-}
-
-function closeNewUmModal() {
-	var modal = document.getElementById('modal-new-um');
-	if (modal) {
-		modal.style.display = 'none';
 	}
 }
 

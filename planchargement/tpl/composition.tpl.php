@@ -27,7 +27,7 @@ foreach ($object->lines as $um) {
 	$um->fetchColis();
 }
 
-// Load UM types for labels and capacity
+// Load UM types for labels
 $umtype_obj = new UmType($db);
 $umtypes = $umtype_obj->fetchAll('ASC', 'label');
 $umtype_map = array();
@@ -42,6 +42,42 @@ $ct_obj = new CamionType($db);
 $charge_utile = 0;
 if ($ct_obj->fetch($object->fk_camion_type) > 0) {
 	$charge_utile = $ct_obj->charge_utile;
+}
+
+// Collect all package IDs (unassigned + assigned) to fetch items in one query
+$all_pkg_ids = array();
+foreach ($colis_libres as $colis) {
+	$all_pkg_ids[] = (int) $colis->fk_package;
+}
+foreach ($object->lines as $um) {
+	if (!empty($um->colis)) {
+		foreach ($um->colis as $c) {
+			$all_pkg_ids[] = (int) $c->fk_package;
+		}
+	}
+}
+$all_pkg_ids = array_unique($all_pkg_ids);
+
+// Fetch items for all packages in one query, with product label
+$items_by_package = array();
+if (!empty($all_pkg_ids)) {
+	$sql_items = "SELECT ci.fk_package, ci.quantity, ci.longueur, ci.largeur,";
+	$sql_items .= " ci.weight_unit, ci.custom_name, ci.description as item_description,";
+	$sql_items .= " cd.fk_product, cd.description as commandedet_desc,";
+	$sql_items .= " p.label as product_label, p.ref as product_ref";
+	$sql_items .= " FROM ".MAIN_DB_PREFIX."colisage_items ci";
+	$sql_items .= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet cd ON cd.rowid = ci.fk_commandedet";
+	$sql_items .= " LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = cd.fk_product";
+	$sql_items .= " WHERE ci.fk_package IN (".implode(',', $all_pkg_ids).")";
+	$sql_items .= " ORDER BY ci.fk_package, ci.rowid";
+
+	$resql_items = $db->query($sql_items);
+	if ($resql_items) {
+		while ($item = $db->fetch_object($resql_items)) {
+			$items_by_package[(int) $item->fk_package][] = $item;
+		}
+		$db->free($resql_items);
+	}
 }
 
 // Group unassigned packages by order
@@ -80,6 +116,29 @@ if ($weight_pct > 90) {
 	$weight_class = 'warning';
 }
 
+/**
+ * Helper: build a short product label from an item row
+ */
+function _planchargement_item_label($item)
+{
+	if (!empty($item->custom_name)) {
+		return $item->custom_name;
+	}
+	if (!empty($item->product_label)) {
+		$label = $item->product_ref ? $item->product_ref.' - ' : '';
+		$label .= $item->product_label;
+		return $label;
+	}
+	if (!empty($item->item_description)) {
+		return $item->item_description;
+	}
+	if (!empty($item->commandedet_desc)) {
+		// Strip HTML tags from order line description
+		return strip_tags($item->commandedet_desc);
+	}
+	return '?';
+}
+
 ?>
 
 <!-- Composition UI -->
@@ -87,9 +146,6 @@ if ($weight_pct > 90) {
 
 	<!-- Top bar -->
 	<div class="planchargement-topbar">
-		<?php if ($is_draft && $user->hasRight('planchargement', 'write')) { ?>
-			<button type="button" id="btn-new-um" class="butAction"><?php echo $langs->trans('PlanchargementNewUm'); ?></button>
-		<?php } ?>
 		<span>
 			<strong><?php echo $langs->trans('PlanchargementWeightCapacity'); ?>:</strong>
 			<span id="poids-total"><?php echo number_format($object->poids_total, 1, '.', ' '); ?></span> kg
@@ -136,18 +192,47 @@ if ($weight_pct > 90) {
 						}
 						?>
 					</h4>
-					<?php foreach ($packages as $pkg) { ?>
+					<?php foreach ($packages as $pkg) {
+						$pkg_items = isset($items_by_package[(int) $pkg->fk_package]) ? $items_by_package[(int) $pkg->fk_package] : array();
+					?>
 					<div class="planchargement-colis<?php echo ($is_draft ? ' draggable' : ''); ?>"
 						 data-fk-package="<?php echo (int) $pkg->fk_package; ?>"
 						 data-qty-restante="<?php echo (int) $pkg->qty_restante; ?>"
 						 data-weight="<?php echo (float) $pkg->total_weight; ?>">
-						<span class="colis-info">
-							#<?php echo (int) $pkg->fk_package; ?>
-							(<?php echo (int) $pkg->qty_restante; ?> <?php echo $langs->trans('PlanchargementQtyRestante'); ?>,
-							<?php echo number_format($pkg->total_weight, 1, '.', ''); ?> kg)
-						</span>
+						<div class="colis-info">
+							<div class="colis-header">
+								<strong><?php echo $langs->trans('PlanchargementColis'); ?> #<?php echo (int) $pkg->fk_package; ?></strong>
+								<span class="opacitymedium">
+									&times;<?php echo (int) $pkg->multiplier; ?>
+									&mdash; <?php echo number_format($pkg->total_weight, 1, '.', ''); ?> kg
+								</span>
+								<span class="badge badge-status4 badge-status" style="font-size: 0.75em;">
+									<?php echo (int) $pkg->qty_restante; ?> <?php echo $langs->trans('PlanchargementQtyRestante'); ?>
+								</span>
+							</div>
+							<?php if (!empty($pkg_items)) { ?>
+							<div class="colis-items">
+								<?php foreach ($pkg_items as $item) { ?>
+								<div class="colis-item-line">
+									<span class="item-label"><?php echo dol_escape_htmltag(dol_trunc(_planchargement_item_label($item), 60)); ?></span>
+									<span class="item-details opacitymedium">
+										&times;<?php echo (int) $item->quantity; ?>
+										<?php if ($item->longueur > 0 && $item->largeur > 0) { ?>
+											&mdash; <?php echo (int) $item->longueur; ?>&times;<?php echo (int) $item->largeur; ?> mm
+										<?php } ?>
+										<?php if ($item->weight_unit > 0) { ?>
+											&mdash; <?php echo number_format($item->weight_unit, 2, '.', ''); ?> kg/u
+										<?php } ?>
+									</span>
+								</div>
+								<?php } ?>
+							</div>
+							<?php } ?>
+						</div>
 						<?php if ($is_draft) { ?>
-						<input type="number" class="qty-to-assign" value="1" min="1" max="<?php echo (int) $pkg->qty_restante; ?>" title="<?php echo $langs->trans('PlanchargementQtyToAssign'); ?>">
+						<div class="colis-assign">
+							<input type="number" class="qty-to-assign" value="1" min="1" max="<?php echo (int) $pkg->qty_restante; ?>" title="<?php echo $langs->trans('PlanchargementQtyToAssign'); ?>">
+						</div>
 						<?php } ?>
 					</div>
 					<?php } ?>
@@ -159,6 +244,24 @@ if ($weight_pct > 90) {
 		<!-- RIGHT COLUMN: UMs -->
 		<div class="planchargement-col-right" id="col-ums">
 			<h3><?php echo $langs->trans('PlanchargementUmList'); ?></h3>
+
+			<?php if ($is_draft && $user->hasRight('planchargement', 'write')) { ?>
+			<!-- Inline UM creation -->
+			<div class="planchargement-create-um">
+				<select id="new-um-type" class="flat">
+					<?php if (is_array($umtypes)) {
+						foreach ($umtypes as $ut) {
+							if (!$ut->active) {
+								continue;
+							}
+							$dims = $ut->longueur.'x'.$ut->largeur.'x'.$ut->hauteur.' mm';
+							print '<option value="'.$ut->id.'">'.dol_escape_htmltag($ut->label).' ('.$dims.')</option>';
+						}
+					} ?>
+				</select>
+				<button type="button" class="button" onclick="confirmCreateUm();"><?php echo $langs->trans('PlanchargementNewUm'); ?></button>
+			</div>
+			<?php } ?>
 
 			<?php if (empty($object->lines)) { ?>
 				<div class="planchargement-empty"><?php echo $langs->trans('PlanchargementNoUmYet'); ?></div>
@@ -187,13 +290,23 @@ if ($weight_pct > 90) {
 						<?php } else { ?>
 							<?php foreach ($um->colis as $c) {
 								$colis_color = isset($commande_colors[$c->fk_commande]) ? $commande_colors[$c->fk_commande] : '#999';
+								$c_items = isset($items_by_package[(int) $c->fk_package]) ? $items_by_package[(int) $c->fk_package] : array();
 							?>
 							<div class="planchargement-assigned-colis" style="border-left: 3px solid <?php echo $colis_color; ?>; padding-left: 8px;">
-								<span>
-									#<?php echo (int) $c->fk_package; ?>
-									&times;<?php echo (int) $c->quantity; ?>
-									(<?php echo number_format($c->total_weight * $c->quantity / max(1, $c->multiplier), 1, '.', ''); ?> kg)
-								</span>
+								<div class="assigned-colis-info">
+									<div>
+										<strong>#<?php echo (int) $c->fk_package; ?></strong>
+										&times;<?php echo (int) $c->quantity; ?>
+										<span class="opacitymedium">(<?php echo number_format($c->total_weight * $c->quantity / max(1, $c->multiplier), 1, '.', ''); ?> kg)</span>
+									</div>
+									<?php if (!empty($c_items)) { ?>
+									<div class="assigned-colis-items opacitymedium">
+										<?php foreach ($c_items as $item) { ?>
+											<span class="item-tag"><?php echo dol_escape_htmltag(dol_trunc(_planchargement_item_label($item), 40)); ?> &times;<?php echo (int) $item->quantity; ?></span>
+										<?php } ?>
+									</div>
+									<?php } ?>
+								</div>
 								<?php if ($is_draft && $user->hasRight('planchargement', 'write')) { ?>
 								<button type="button" class="btn-remove-colis"
 										data-um-id="<?php echo (int) $um->id; ?>"
@@ -212,28 +325,3 @@ if ($weight_pct > 90) {
 
 	</div>
 </div>
-
-<?php if ($is_draft && $user->hasRight('planchargement', 'write')) { ?>
-<!-- New UM Modal (hidden by default) -->
-<div id="modal-new-um" class="planchargement-modal-overlay" style="display: none;">
-	<div class="planchargement-modal">
-		<h3><?php echo $langs->trans('PlanchargementNewUm'); ?></h3>
-		<p><?php echo $langs->trans('PlanchargementSelectUmType'); ?>:</p>
-		<select id="new-um-type" class="flat minwidth200">
-			<?php if (is_array($umtypes)) {
-				foreach ($umtypes as $ut) {
-					if (!$ut->active) {
-						continue;
-					}
-					$dims = $ut->longueur.'x'.$ut->largeur.'x'.$ut->hauteur.' mm';
-					print '<option value="'.$ut->id.'">'.dol_escape_htmltag($ut->label).' ('.$dims.')</option>';
-				}
-			} ?>
-		</select>
-		<div class="modal-actions">
-			<button type="button" class="button" onclick="confirmCreateUm();"><?php echo $langs->trans('Create'); ?></button>
-			<button type="button" class="button button-cancel" onclick="closeNewUmModal();"><?php echo $langs->trans('Cancel'); ?></button>
-		</div>
-	</div>
-</div>
-<?php } ?>
