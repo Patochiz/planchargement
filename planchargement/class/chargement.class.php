@@ -729,14 +729,15 @@ class Chargement extends CommonObject
 	}
 
 	/**
-	 * Set status of loading plan
+	 * Change status of loading plan
+	 * Note: named changeStatus() to avoid conflict with CommonObject::setStatut() signature
 	 *
 	 * @param  int  $statut    New status
 	 * @param  User $user      User making the change
 	 * @param  int  $notrigger 0=launch triggers, 1=disable triggers
 	 * @return int             >0 if OK, <0 if KO
 	 */
-	public function setStatut($statut, User $user, $notrigger = 0)
+	public function changeStatus($statut, User $user, $notrigger = 0)
 	{
 		// For DRAFT -> VALID, use valid() instead
 		if ($this->statut == self::STATUS_DRAFT && $statut == self::STATUS_VALID) {

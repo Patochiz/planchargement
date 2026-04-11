@@ -11,6 +11,21 @@
 @ini_set('display_errors', 1);
 @error_reporting(E_ALL);
 
+// Capture fatal errors that OVH hides
+register_shutdown_function(function () {
+	$error = error_get_last();
+	if ($error && in_array($error['type'], array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR))) {
+		if (php_sapi_name() !== 'cli') {
+			header('Content-Type: text/plain; charset=utf-8');
+		}
+		echo "\n\n*** FATAL ERROR ***\n";
+		echo "Type: ".$error['type']."\n";
+		echo "Message: ".$error['message']."\n";
+		echo "File: ".$error['file']."\n";
+		echo "Line: ".$error['line']."\n";
+	}
+});
+
 // Define constants BEFORE main.inc.php
 if (!defined('NOREQUIREMENU')) {
 	define('NOREQUIREMENU', '1');
@@ -300,9 +315,9 @@ test('Chargement statut after valid', $chg2->statut == Chargement::STATUS_VALID,
 $result = $chg2->valid($user);
 test('Chargement double valid blocked', $result < 0, 'error='.$chg2->error);
 
-// Test setStatut to DEPARTED
-$result = $chg2->setStatut(Chargement::STATUS_DEPARTED, $user);
-test('Chargement setStatut DEPARTED', $result > 0, 'result='.$result);
+// Test changeStatus to DEPARTED
+$result = $chg2->changeStatus(Chargement::STATUS_DEPARTED, $user);
+test('Chargement changeStatus DEPARTED', $result > 0, 'result='.$result);
 test('Chargement statut = DEPARTED', $chg2->statut == Chargement::STATUS_DEPARTED, 'statut='.$chg2->statut);
 
 // Delete should fail on non-DRAFT

@@ -1,6 +1,19 @@
 <?php
 // Minimal diagnostic script - step by step
 header('Content-Type: text/plain; charset=utf-8');
+
+// Capture fatal errors that OVH hides
+register_shutdown_function(function () {
+	$error = error_get_last();
+	if ($error && in_array($error['type'], array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR))) {
+		echo "\n\n*** FATAL ERROR ***\n";
+		echo "Type: ".$error['type']."\n";
+		echo "Message: ".$error['message']."\n";
+		echo "File: ".$error['file']."\n";
+		echo "Line: ".$error['line']."\n";
+	}
+});
+
 echo "Step 1: PHP works\n";
 echo "PHP version: ".PHP_VERSION."\n";
 echo "Script dir: ".__DIR__."\n\n";
