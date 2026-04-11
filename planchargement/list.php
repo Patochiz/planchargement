@@ -13,7 +13,7 @@
  * \brief   List of loading plans
  */
 
-require_once '../../../main.inc.php';
+require_once '../../main.inc.php';
 dol_include_once('/planchargement/class/chargement.class.php');
 dol_include_once('/planchargement/class/camiontype.class.php');
 

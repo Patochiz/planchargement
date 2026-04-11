@@ -13,7 +13,7 @@
  * \brief   Loading plan card (create/view/edit with tabs)
  */
 
-require_once '../../../main.inc.php';
+require_once '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/date.lib.php';
 dol_include_once('/planchargement/class/chargement.class.php');

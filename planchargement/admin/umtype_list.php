@@ -95,7 +95,6 @@ if (is_array($records) && count($records) > 0) {
 	print '<td class="right">'.$langs->trans('PlanchargementLongueur').'</td>';
 	print '<td class="right">'.$langs->trans('PlanchargementLargeur').'</td>';
 	print '<td class="right">'.$langs->trans('PlanchargementHauteur').'</td>';
-	print '<td class="right">'.$langs->trans('PlanchargementChargeMax').'</td>';
 	print '<td class="center">'.$langs->trans('PlanchargementGerbable').'</td>';
 	print '<td class="center">'.$langs->trans('Status').'</td>';
 	print '<td class="center">'.$langs->trans('Action').'</td>';
@@ -113,7 +112,6 @@ if (is_array($records) && count($records) > 0) {
 		print '<td class="right">'.number_format($record->longueur, 0, '', ' ').'</td>';
 		print '<td class="right">'.number_format($record->largeur, 0, '', ' ').'</td>';
 		print '<td class="right">'.number_format($record->hauteur, 0, '', ' ').'</td>';
-		print '<td class="right">'.number_format($record->charge_max, 0, '', ' ').'</td>';
 
 		// Gerbable
 		print '<td class="center">';

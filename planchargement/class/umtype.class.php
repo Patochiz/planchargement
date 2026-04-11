@@ -83,15 +83,6 @@ class UmType extends CommonObject
 			'position' => 40,
 			'help' => 'mm',
 		),
-		'charge_max' => array(
-			'type' => 'real',
-			'label' => 'PlanchargementChargeMax',
-			'visible' => 1,
-			'enabled' => 1,
-			'notnull' => 1,
-			'position' => 50,
-			'help' => 'kg',
-		),
 		'gerbable' => array(
 			'type' => 'smallint',
 			'label' => 'PlanchargementGerbable',
@@ -138,8 +129,6 @@ class UmType extends CommonObject
 	public $largeur;
 	/** @var int Height in mm */
 	public $hauteur;
-	/** @var float Max load in kg */
-	public $charge_max;
 	/** @var int 0=not stackable, 1=stackable */
 	public $gerbable;
 	/** @var int 0=disabled, 1=enabled */

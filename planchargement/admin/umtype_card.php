@@ -46,7 +46,6 @@ if ($action == 'add') {
 	$object->longueur = GETPOSTINT('longueur');
 	$object->largeur = GETPOSTINT('largeur');
 	$object->hauteur = GETPOSTINT('hauteur');
-	$object->charge_max = GETPOSTFLOAT('charge_max');
 	$object->gerbable = GETPOSTINT('gerbable');
 	$object->active = GETPOSTINT('active');
 
@@ -71,7 +70,6 @@ if ($action == 'update') {
 	$object->longueur = GETPOSTINT('longueur');
 	$object->largeur = GETPOSTINT('largeur');
 	$object->hauteur = GETPOSTINT('hauteur');
-	$object->charge_max = GETPOSTFLOAT('charge_max');
 	$object->gerbable = GETPOSTINT('gerbable');
 	$object->active = GETPOSTINT('active');
 
@@ -131,10 +129,6 @@ if ($action == 'create' || $action == 'edit') {
 	print '<tr><td>'.$langs->trans('PlanchargementHauteur').'</td>';
 	print '<td><input type="number" name="hauteur" class="width100" value="'.(GETPOSTISSET('hauteur') ? GETPOSTINT('hauteur') : $object->hauteur).'"> mm</td></tr>';
 
-	// Charge max
-	print '<tr><td>'.$langs->trans('PlanchargementChargeMax').'</td>';
-	print '<td><input type="number" step="0.1" name="charge_max" class="width100" value="'.(GETPOSTISSET('charge_max') ? GETPOSTFLOAT('charge_max') : $object->charge_max).'"> kg</td></tr>';
-
 	// Gerbable
 	print '<tr><td>'.$langs->trans('PlanchargementGerbable').'</td>';
 	print '<td>';
@@ -186,9 +180,6 @@ if ($action == 'create' || $action == 'edit') {
 
 		print '<tr><td>'.$langs->trans('PlanchargementHauteur').'</td>';
 		print '<td>'.number_format($object->hauteur, 0, '', ' ').' mm</td></tr>';
-
-		print '<tr><td>'.$langs->trans('PlanchargementChargeMax').'</td>';
-		print '<td>'.number_format($object->charge_max, 0, '', ' ').' kg</td></tr>';
 
 		print '<tr><td>'.$langs->trans('PlanchargementGerbable').'</td>';
 		print '<td>';

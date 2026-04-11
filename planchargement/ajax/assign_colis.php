@@ -30,7 +30,7 @@ if (!defined('NOCSRFCHECK')) {
 	define('NOCSRFCHECK', '1');
 }
 
-require_once '../../main.inc.php';
+require_once '../../../main.inc.php';
 dol_include_once('/planchargement/class/chargement.class.php');
 dol_include_once('/planchargement/class/chargementum.class.php');
 

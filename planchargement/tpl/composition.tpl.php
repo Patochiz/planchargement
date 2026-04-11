@@ -165,20 +165,14 @@ if ($weight_pct > 90) {
 			<?php } else { ?>
 				<?php foreach ($object->lines as $um) {
 					$ut = isset($umtype_map[$um->fk_um_type]) ? $umtype_map[$um->fk_um_type] : null;
-					$um_charge_max = $ut ? $ut->charge_max : 0;
-					$um_weight_pct = ($um_charge_max > 0) ? round(($um->poids_total / $um_charge_max) * 100) : 0;
-					$is_overweight = ($um_charge_max > 0 && $um->poids_total > $um_charge_max);
 				?>
-				<div class="planchargement-um<?php echo ($is_draft ? ' dropzone' : ''); ?><?php echo ($is_overweight ? ' overweight' : ''); ?>" data-um-id="<?php echo (int) $um->id; ?>">
+				<div class="planchargement-um<?php echo ($is_draft ? ' dropzone' : ''); ?>" data-um-id="<?php echo (int) $um->id; ?>">
 					<div class="planchargement-um-header" onclick="toggleUmContents(<?php echo (int) $um->id; ?>)">
 						<span class="um-info">
 							<span class="um-ref"><?php echo dol_escape_htmltag($um->ref_um); ?></span>
 							<span class="um-type"><?php echo $ut ? dol_escape_htmltag($ut->label) : '?'; ?></span>
 							<span class="um-weight">
 								<?php echo number_format($um->poids_total, 1, '.', ' '); ?> kg
-								<?php if ($um_charge_max > 0) {
-									echo '/ '.number_format($um_charge_max, 0, '', ' ').' kg';
-								} ?>
 							</span>
 						</span>
 						<span class="um-actions">
