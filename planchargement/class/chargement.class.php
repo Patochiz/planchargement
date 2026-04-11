@@ -810,10 +810,10 @@ class Chargement extends CommonObject
 		$langs->load('planchargement@planchargement');
 
 		$labelStatus = array();
-		$labelStatus[self::STATUS_DRAFT] = $langs->transnoentitiesaliases('PlanchargementStatusDraft');
-		$labelStatus[self::STATUS_VALID] = $langs->transnoentitiesaliases('PlanchargementStatusValid');
-		$labelStatus[self::STATUS_DEPARTED] = $langs->transnoentitiesaliases('PlanchargementStatusDeparted');
-		$labelStatus[self::STATUS_CANCELLED] = $langs->transnoentitiesaliases('PlanchargementStatusCancelled');
+		$labelStatus[self::STATUS_DRAFT] = $langs->transnoentities('PlanchargementStatusDraft');
+		$labelStatus[self::STATUS_VALID] = $langs->transnoentities('PlanchargementStatusValid');
+		$labelStatus[self::STATUS_DEPARTED] = $langs->transnoentities('PlanchargementStatusDeparted');
+		$labelStatus[self::STATUS_CANCELLED] = $langs->transnoentities('PlanchargementStatusCancelled');
 
 		$labelStatusShort = $labelStatus;
 

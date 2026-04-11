@@ -7,6 +7,10 @@
  * Add ?cleanup=1 (browser) or --cleanup (CLI) to delete test data after tests.
  */
 
+// Show errors for debugging (remove in production)
+@ini_set('display_errors', 1);
+@error_reporting(E_ALL);
+
 // Define constants BEFORE main.inc.php
 if (!defined('NOREQUIREMENU')) {
 	define('NOREQUIREMENU', '1');
@@ -25,33 +29,24 @@ if (!defined('NOSESSION')) {
 }
 
 // Detect Dolibarr main.inc.php
+// Structure: htdocs/custom/planchargement/scripts/test_crud.php
+//            htdocs/main.inc.php  (3 levels up from scripts/)
 $path_to_main = '';
-$trydirs = array(
-	__DIR__.'/../../../..',           // htdocs/custom/planchargement/scripts -> htdocs
-	__DIR__.'/../../..',              // alternate depth
-	__DIR__.'/../../../htdocs',       // repo root / htdocs
-	__DIR__.'/../..',                 // custom/planchargement/scripts -> custom -> htdocs (2 levels)
-);
-foreach ($trydirs as $dir) {
-	$try = realpath($dir.'/main.inc.php');
-	if ($try && file_exists($try)) {
+for ($i = 1; $i <= 6; $i++) {
+	$try = dirname(__DIR__, $i).'/main.inc.php';
+	if (@file_exists($try)) {
 		$path_to_main = $try;
 		break;
 	}
 }
 
 if (empty($path_to_main)) {
-	// Last resort: try relative include that OVH resolves
-	$try = @realpath(__DIR__.'/../../../main.inc.php');
-	if ($try && file_exists($try)) {
-		$path_to_main = $try;
-	}
-}
-
-if (empty($path_to_main)) {
 	header('Content-Type: text/plain; charset=utf-8');
 	echo "ERROR: Could not find Dolibarr main.inc.php\n";
-	echo "Tried from: ".__DIR__."\n";
+	echo "Script dir: ".__DIR__."\n";
+	for ($i = 1; $i <= 6; $i++) {
+		echo "  Tried: ".dirname(__DIR__, $i)."/main.inc.php\n";
+	}
 	exit(1);
 }
 
