@@ -62,9 +62,9 @@ $all_pkg_ids = array_unique($all_pkg_ids);
 $items_by_package = array();
 if (!empty($all_pkg_ids)) {
 	$sql_items = "SELECT ci.fk_package, ci.quantity, ci.longueur, ci.largeur,";
-	$sql_items .= " ci.weight_unit, ci.custom_name, ci.description as item_description,";
+	$sql_items .= " ci.custom_name, ci.description as item_description,";
 	$sql_items .= " cd.fk_product, cd.description as commandedet_desc,";
-	$sql_items .= " p.label as product_label, p.ref as product_ref";
+	$sql_items .= " p.ref as product_ref";
 	$sql_items .= " FROM ".MAIN_DB_PREFIX."colisage_items ci";
 	$sql_items .= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet cd ON cd.rowid = ci.fk_commandedet";
 	$sql_items .= " LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = cd.fk_product";
@@ -117,24 +117,21 @@ if ($weight_pct > 90) {
 }
 
 /**
- * Helper: build a short product label from an item row
+ * Helper: build a short product label from an item row (ref only)
  */
 function _planchargement_item_label($item)
 {
 	if (!empty($item->custom_name)) {
 		return $item->custom_name;
 	}
-	if (!empty($item->product_label)) {
-		$label = $item->product_ref ? $item->product_ref.' - ' : '';
-		$label .= $item->product_label;
-		return $label;
+	if (!empty($item->product_ref)) {
+		return $item->product_ref;
 	}
 	if (!empty($item->item_description)) {
-		return $item->item_description;
+		return dol_trunc(strip_tags($item->item_description), 40);
 	}
 	if (!empty($item->commandedet_desc)) {
-		// Strip HTML tags from order line description
-		return strip_tags($item->commandedet_desc);
+		return dol_trunc(strip_tags($item->commandedet_desc), 40);
 	}
 	return '?';
 }
@@ -197,14 +194,12 @@ function _planchargement_item_label($item)
 					?>
 					<div class="planchargement-colis<?php echo ($is_draft ? ' draggable' : ''); ?>"
 						 data-fk-package="<?php echo (int) $pkg->fk_package; ?>"
-						 data-qty-restante="<?php echo (int) $pkg->qty_restante; ?>"
-						 data-weight="<?php echo (float) $pkg->total_weight; ?>">
+						 data-qty-restante="<?php echo (int) $pkg->qty_restante; ?>">
 						<div class="colis-info">
 							<div class="colis-header">
 								<strong><?php echo $langs->trans('PlanchargementColis'); ?> #<?php echo (int) $pkg->fk_package; ?></strong>
 								<span class="opacitymedium">
 									&times;<?php echo (int) $pkg->multiplier; ?>
-									&mdash; <?php echo number_format($pkg->total_weight, 1, '.', ''); ?> kg
 								</span>
 								<span class="badge badge-status4 badge-status" style="font-size: 0.75em;">
 									<?php echo (int) $pkg->qty_restante; ?> <?php echo $langs->trans('PlanchargementQtyRestante'); ?>
@@ -214,14 +209,11 @@ function _planchargement_item_label($item)
 							<div class="colis-items">
 								<?php foreach ($pkg_items as $item) { ?>
 								<div class="colis-item-line">
-									<span class="item-label"><?php echo dol_escape_htmltag(dol_trunc(_planchargement_item_label($item), 60)); ?></span>
+									<span class="item-label"><?php echo dol_escape_htmltag(_planchargement_item_label($item)); ?></span>
 									<span class="item-details opacitymedium">
 										&times;<?php echo (int) $item->quantity; ?>
 										<?php if ($item->longueur > 0 && $item->largeur > 0) { ?>
 											&mdash; <?php echo (int) $item->longueur; ?>&times;<?php echo (int) $item->largeur; ?> mm
-										<?php } ?>
-										<?php if ($item->weight_unit > 0) { ?>
-											&mdash; <?php echo number_format($item->weight_unit, 2, '.', ''); ?> kg/u
 										<?php } ?>
 									</span>
 								</div>
@@ -274,9 +266,6 @@ function _planchargement_item_label($item)
 						<span class="um-info">
 							<span class="um-ref"><?php echo dol_escape_htmltag($um->ref_um); ?></span>
 							<span class="um-type"><?php echo $ut ? dol_escape_htmltag($ut->label) : '?'; ?></span>
-							<span class="um-weight">
-								<?php echo number_format($um->poids_total, 1, '.', ' '); ?> kg
-							</span>
 						</span>
 						<span class="um-actions">
 							<?php if ($is_draft && $user->hasRight('planchargement', 'write')) { ?>
@@ -297,12 +286,11 @@ function _planchargement_item_label($item)
 									<div>
 										<strong>#<?php echo (int) $c->fk_package; ?></strong>
 										&times;<?php echo (int) $c->quantity; ?>
-										<span class="opacitymedium">(<?php echo number_format($c->total_weight * $c->quantity / max(1, $c->multiplier), 1, '.', ''); ?> kg)</span>
 									</div>
 									<?php if (!empty($c_items)) { ?>
 									<div class="assigned-colis-items opacitymedium">
 										<?php foreach ($c_items as $item) { ?>
-											<span class="item-tag"><?php echo dol_escape_htmltag(dol_trunc(_planchargement_item_label($item), 40)); ?> &times;<?php echo (int) $item->quantity; ?></span>
+											<span class="item-tag"><?php echo dol_escape_htmltag(_planchargement_item_label($item)); ?> &times;<?php echo (int) $item->quantity; ?></span>
 										<?php } ?>
 									</div>
 									<?php } ?>

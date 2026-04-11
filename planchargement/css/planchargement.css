@@ -140,9 +140,6 @@
 .planchargement-um-header .um-ref {
 	font-weight: bold;
 }
-.planchargement-um-header .um-weight {
-	color: #666;
-}
 .planchargement-um-header .um-actions {
 	display: flex;
 	gap: 6px;
