@@ -37,11 +37,21 @@ foreach ($object->lines as $um) {
 }
 
 // Load UM types for labels
+// $umtypes = catalog (admin) types only — feeds the dropdown.
+// $umtype_map also includes the one-shot custom types belonging to this
+// chargement, so that UMs created from inline custom forms render correctly.
 $umtype_obj = new UmType($db);
 $umtypes = $umtype_obj->fetchAll('ASC', 'label');
 $umtype_map = array();
 if (is_array($umtypes)) {
 	foreach ($umtypes as $ut) {
+		$umtype_map[$ut->id] = $ut;
+	}
+}
+$custom_types_filter = 'is_custom = 1 AND fk_chargement_origin = '.((int) $object->id);
+$custom_types = $umtype_obj->fetchAll('ASC', 'label', 0, 0, $custom_types_filter, 'AND', true);
+if (is_array($custom_types)) {
+	foreach ($custom_types as $ut) {
 		$umtype_map[$ut->id] = $ut;
 	}
 }
