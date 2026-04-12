@@ -15,6 +15,15 @@
  * Expected variables: $object (Chargement, already fetched), $db, $langs, $user
  */
 
+// Colisage external classes (consumed read-only, cf. CLAUDE_CODE_GUIDE §4.2)
+dol_include_once('/colisage/class/colisagepackage.class.php');
+dol_include_once('/colisage/class/colisageitem.class.php');
+
+// Soft reference to the service-product used by Colisage as a section marker
+// (fk_product=361, product_type=1). Kept as a local constant — could later be
+// promoted to a module setting via getDolGlobalInt('PLANCHARGEMENT_COLISAGE_TITRE_SERVICE_ID').
+$COLISAGE_TITRE_SERVICE_ID = 361;
+
 // Fetch data
 $object->fetchUms();
 $colis_libres = $object->getColisNonAffectes();
@@ -58,42 +67,71 @@ foreach ($object->lines as $um) {
 }
 $all_pkg_ids = array_unique($all_pkg_ids);
 
-// Fetch items for all packages in one query, with product label
-$items_by_package = array();
-if (!empty($all_pkg_ids)) {
-	$sql_items = "SELECT ci.fk_package, ci.quantity, ci.longueur, ci.largeur,";
-	$sql_items .= " ci.custom_name, ci.description as item_description,";
-	$sql_items .= " cd.fk_product, cd.description as commandedet_desc,";
-	$sql_items .= " p.ref as product_ref";
-	$sql_items .= " FROM ".MAIN_DB_PREFIX."colisage_items ci";
-	$sql_items .= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet cd ON cd.rowid = ci.fk_commandedet";
-	$sql_items .= " LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = cd.fk_product";
-	$sql_items .= " WHERE ci.fk_package IN (".implode(',', $all_pkg_ids).")";
-	$sql_items .= " ORDER BY ci.fk_package, ci.rowid";
-
-	$resql_items = $db->query($sql_items);
-	if ($resql_items) {
-		while ($item = $db->fetch_object($resql_items)) {
-			$items_by_package[(int) $item->fk_package][] = $item;
-		}
-		$db->free($resql_items);
-	}
-}
-
 // Group unassigned packages by order
 $colis_by_commande = array();
 foreach ($colis_libres as $colis) {
 	$colis_by_commande[$colis->fk_commande][] = $colis;
 }
 
-// Fetch commande refs for display
+// Fetch commande refs + parse order lines to build:
+//   $section_by_commandedet : fk_commandedet -> current section title
+//   $linedet_by_id          : fk_commandedet -> ['product_ref','desc','label']
+// Section detection replicates Colisage logic (service ID=361, product_type=1),
+// title source = extrafield ref_chantier (priority), fallback = line desc.
 require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
 $commande_cache = array();
+$section_by_commandedet = array();
+$linedet_by_id = array();
 foreach ($object->commandes as $fk_cmd) {
 	$cmd = new Commande($db);
 	$cmd->fetch($fk_cmd);
 	$cmd->fetch_thirdparty();
 	$commande_cache[$fk_cmd] = $cmd;
+
+	if (empty($cmd->lines)) {
+		$cmd->fetch_lines();
+	}
+	$current_title = '';
+	if (!empty($cmd->lines)) {
+		foreach ($cmd->lines as $line) {
+			$is_section = ((int) $line->fk_product === $COLISAGE_TITRE_SERVICE_ID
+				&& (int) $line->product_type === 1);
+			if ($is_section) {
+				$ref_chantier = '';
+				if (!empty($line->array_options['options_ref_chantier'])) {
+					$ref_chantier = $line->array_options['options_ref_chantier'];
+				}
+				if ($ref_chantier !== '') {
+					$current_title = $ref_chantier;
+				} elseif (!empty($line->desc)) {
+					$current_title = $line->desc;
+				} elseif (!empty($line->description)) {
+					$current_title = $line->description;
+				} else {
+					$current_title = (string) $line->label;
+				}
+				continue;
+			}
+			$rowid = (int) $line->rowid;
+			$section_by_commandedet[$rowid] = $current_title;
+			$linedet_by_id[$rowid] = array(
+				'product_ref' => isset($line->product_ref) ? $line->product_ref : (isset($line->ref) ? $line->ref : ''),
+				'desc'        => isset($line->desc) ? $line->desc : '',
+				'label'       => isset($line->product_label) ? $line->product_label : '',
+			);
+		}
+	}
+}
+
+// Load all referenced packages via ColisagePackage (fetch() auto-calls fetchItems()).
+// Replaces the previous raw SQL on llx_colisage_items and keeps in sync with the
+// Colisage module's own class logic.
+$packages_cache = array();
+foreach ($all_pkg_ids as $pid) {
+	$cp = new ColisagePackage($db);
+	if ($cp->fetch((int) $pid) > 0) {
+		$packages_cache[(int) $pid] = $cp;
+	}
 }
 
 // Color palette for orders
@@ -117,23 +155,60 @@ if ($weight_pct > 90) {
 }
 
 /**
- * Helper: build a short product label from an item row (ref only)
+ * Helper: build a short product label for a ColisageItem.
+ * Uses $linedet_by_id (indexed on fk_commandedet) built from the commande lines
+ * so we don't have to re-query llx_product / llx_commandedet for each item.
+ *
+ * @param ColisageItem $colisage_item Item loaded via ColisagePackage::fetchItems()
+ * @param array        $linedet_by_id Map fk_commandedet => ['product_ref','desc','label']
+ * @return string
  */
-function _planchargement_item_label($item)
+function _planchargement_item_label($colisage_item, $linedet_by_id)
 {
-	if (!empty($item->custom_name)) {
-		return $item->custom_name;
+	if (!empty($colisage_item->custom_name)) {
+		return $colisage_item->custom_name;
 	}
-	if (!empty($item->product_ref)) {
-		return $item->product_ref;
+	$cd = isset($colisage_item->fk_commandedet) ? (int) $colisage_item->fk_commandedet : 0;
+	if ($cd > 0 && isset($linedet_by_id[$cd])) {
+		$l = $linedet_by_id[$cd];
+		if (!empty($l['product_ref'])) {
+			return $l['product_ref'];
+		}
+		if (!empty($l['desc'])) {
+			return dol_trunc(strip_tags($l['desc']), 40);
+		}
+		if (!empty($l['label'])) {
+			return dol_trunc(strip_tags($l['label']), 40);
+		}
 	}
-	if (!empty($item->item_description)) {
-		return dol_trunc(strip_tags($item->item_description), 40);
-	}
-	if (!empty($item->commandedet_desc)) {
-		return dol_trunc(strip_tags($item->commandedet_desc), 40);
+	if (!empty($colisage_item->description)) {
+		return dol_trunc(strip_tags($colisage_item->description), 40);
 	}
 	return '?';
+}
+
+/**
+ * Helper: find the Colisage section title for a package.
+ * Returns the title of the first item whose fk_commandedet maps to a non-empty
+ * section. Empty string means "no section" (free package, or package before any
+ * section marker in the order).
+ *
+ * @param ColisagePackage $pkg                    Package with items already loaded
+ * @param array           $section_by_commandedet Map fk_commandedet => section title
+ * @return string
+ */
+function _planchargement_package_section_title($pkg, $section_by_commandedet)
+{
+	if (empty($pkg) || empty($pkg->items)) {
+		return '';
+	}
+	foreach ($pkg->items as $it) {
+		$cd = isset($it->fk_commandedet) ? (int) $it->fk_commandedet : 0;
+		if ($cd > 0 && isset($section_by_commandedet[$cd]) && $section_by_commandedet[$cd] !== '') {
+			return $section_by_commandedet[$cd];
+		}
+	}
+	return '';
 }
 
 ?>
@@ -190,12 +265,17 @@ function _planchargement_item_label($item)
 						?>
 					</h4>
 					<?php foreach ($packages as $pkg) {
-						$pkg_items = isset($items_by_package[(int) $pkg->fk_package]) ? $items_by_package[(int) $pkg->fk_package] : array();
+						$cp = isset($packages_cache[(int) $pkg->fk_package]) ? $packages_cache[(int) $pkg->fk_package] : null;
+						$pkg_items = $cp ? $cp->items : array();
+						$section_title = _planchargement_package_section_title($cp, $section_by_commandedet);
 					?>
 					<div class="planchargement-colis<?php echo ($is_draft ? ' draggable' : ''); ?>"
 						 data-fk-package="<?php echo (int) $pkg->fk_package; ?>"
 						 data-qty-restante="<?php echo (int) $pkg->qty_restante; ?>">
 						<div class="colis-info">
+							<?php if ($section_title !== '') { ?>
+							<div class="colis-section-label"><?php echo dol_escape_htmltag($section_title); ?></div>
+							<?php } ?>
 							<div class="colis-header">
 								<strong><?php echo $langs->trans('PlanchargementColis'); ?> #<?php echo (int) $pkg->fk_package; ?></strong>
 								<span class="opacitymedium">
@@ -209,8 +289,8 @@ function _planchargement_item_label($item)
 							<div class="colis-items">
 								<?php foreach ($pkg_items as $item) { ?>
 								<div class="colis-item-line">
-									<span class="item-label"><?php echo dol_escape_htmltag(_planchargement_item_label($item)); ?></span>
-									<span class="item-details opacitymedium">
+									<span class="item-label"><?php echo dol_escape_htmltag(_planchargement_item_label($item, $linedet_by_id)); ?></span>
+									<span class="item-details">
 										&times;<?php echo (int) $item->quantity; ?>
 										<?php if ($item->longueur > 0 && $item->largeur > 0) { ?>
 											&mdash; <?php echo (int) $item->longueur; ?>&times;<?php echo (int) $item->largeur; ?> mm
@@ -279,7 +359,8 @@ function _planchargement_item_label($item)
 						<?php } else { ?>
 							<?php foreach ($um->colis as $c) {
 								$colis_color = isset($commande_colors[$c->fk_commande]) ? $commande_colors[$c->fk_commande] : '#999';
-								$c_items = isset($items_by_package[(int) $c->fk_package]) ? $items_by_package[(int) $c->fk_package] : array();
+								$cp_assigned = isset($packages_cache[(int) $c->fk_package]) ? $packages_cache[(int) $c->fk_package] : null;
+								$c_items = $cp_assigned ? $cp_assigned->items : array();
 							?>
 							<div class="planchargement-assigned-colis" style="border-left: 3px solid <?php echo $colis_color; ?>; padding-left: 8px;">
 								<div class="assigned-colis-info">
@@ -290,7 +371,7 @@ function _planchargement_item_label($item)
 									<?php if (!empty($c_items)) { ?>
 									<div class="assigned-colis-items opacitymedium">
 										<?php foreach ($c_items as $item) { ?>
-											<span class="item-tag"><?php echo dol_escape_htmltag(_planchargement_item_label($item)); ?> &times;<?php echo (int) $item->quantity; ?></span>
+											<span class="item-tag"><?php echo dol_escape_htmltag(_planchargement_item_label($item, $linedet_by_id)); ?> &times;<?php echo (int) $item->quantity; ?></span>
 										<?php } ?>
 									</div>
 									<?php } ?>

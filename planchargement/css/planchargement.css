@@ -90,8 +90,20 @@
 	color: #333;
 }
 .planchargement-colis .colis-item-line .item-details {
-	font-size: 0.9em;
+	font-size: 1em;
+	font-weight: 700;
 	white-space: nowrap;
+	color: #333;
+}
+.planchargement-colis .colis-section-label {
+	font-weight: 700;
+	font-size: 0.95em;
+	color: #2d3748;
+	background: #eef2ff;
+	border-left: 3px solid #667eea;
+	padding: 3px 6px;
+	border-radius: 3px;
+	margin-bottom: 5px;
 }
 .planchargement-colis .colis-assign {
 	flex-shrink: 0;
