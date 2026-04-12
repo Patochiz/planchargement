@@ -1,0 +1,260 @@
+/* Plan de chargement - Composition UI styles */
+
+/* Top bar */
+.planchargement-topbar {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	padding: 10px 0;
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+}
+
+/* Two-column layout */
+.planchargement-columns {
+	display: flex;
+	gap: 20px;
+}
+.planchargement-col-left,
+.planchargement-col-right {
+	flex: 1;
+	min-height: 300px;
+	border: 1px solid #dee2e6;
+	border-radius: 4px;
+	padding: 10px;
+	overflow-y: auto;
+	max-height: 700px;
+}
+.planchargement-col-left {
+	background: #fafbfc;
+}
+
+/* Order groups in left column */
+.planchargement-order-group {
+	margin: 8px 0;
+	padding: 8px;
+	border-radius: 4px;
+	background: #fff;
+}
+.planchargement-order-group h4 {
+	margin: 0 0 6px 0;
+	font-size: 0.9em;
+	color: #333;
+}
+
+/* Draggable colis cards */
+.planchargement-colis {
+	padding: 8px 10px;
+	margin: 6px 0;
+	background: #f8f9fa;
+	border: 1px solid #dee2e6;
+	border-radius: 4px;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 0.85em;
+}
+.planchargement-colis.draggable {
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+}
+.planchargement-colis.draggable:active {
+	cursor: grabbing;
+}
+.planchargement-colis .colis-info,
+.planchargement-assigned-colis .colis-info {
+	flex: 1;
+	min-width: 0;
+}
+.planchargement-colis .colis-header,
+.planchargement-assigned-colis .colis-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 4px;
+}
+.planchargement-colis .colis-items,
+.planchargement-assigned-colis .colis-items {
+	margin-top: 4px;
+	padding-top: 4px;
+	border-top: 1px dotted #dee2e6;
+}
+.planchargement-colis .colis-item-line,
+.planchargement-assigned-colis .colis-item-line {
+	padding: 1px 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+.planchargement-colis .colis-item-line .item-label,
+.planchargement-assigned-colis .colis-item-line .item-label {
+	font-weight: 500;
+	color: #333;
+}
+.planchargement-colis .colis-item-line .item-details,
+.planchargement-assigned-colis .colis-item-line .item-details {
+	font-size: 1em;
+	font-weight: 700;
+	white-space: nowrap;
+	color: #333;
+}
+.planchargement-colis .colis-section-label,
+.planchargement-assigned-colis .colis-section-label {
+	font-weight: 700;
+	font-size: 0.95em;
+	color: #2d3748;
+	background: #eef2ff;
+	border-left: 3px solid #667eea;
+	padding: 3px 6px;
+	border-radius: 3px;
+	margin-bottom: 5px;
+}
+.planchargement-colis .colis-assign {
+	flex-shrink: 0;
+	padding-top: 2px;
+}
+.planchargement-colis .qty-to-assign {
+	width: 50px;
+	text-align: center;
+}
+
+/* Inline UM creation */
+.planchargement-create-um {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 12px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #dee2e6;
+}
+.planchargement-create-um select {
+	flex: 1;
+}
+
+/* UM cards in right column */
+.planchargement-um {
+	margin: 8px 0;
+	border: 1px solid #bdc3c7;
+	border-radius: 4px;
+	background: #fff;
+}
+.planchargement-um-header {
+	padding: 8px 12px;
+	background: #ecf0f1;
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-radius: 3px 3px 0 0;
+	font-size: 0.9em;
+}
+.planchargement-um-header .um-info {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+.planchargement-um-header .um-ref {
+	font-weight: bold;
+}
+.planchargement-um-header .um-actions {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+.planchargement-um-contents {
+	padding: 6px 12px;
+	border-top: 1px solid #dee2e6;
+}
+
+/* Assigned colis in UM */
+.planchargement-assigned-colis {
+	padding: 6px 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	font-size: 0.85em;
+	border-bottom: 1px dotted #eee;
+}
+.planchargement-assigned-colis:last-child {
+	border-bottom: none;
+}
+
+/* Drop zone states */
+.planchargement-um.drop-active {
+	border: 2px dashed #3498db;
+}
+.planchargement-um.drop-target {
+	background-color: rgba(52, 152, 219, 0.08);
+	border-color: #2980b9;
+}
+
+/* Weight progress bar */
+.weight-progress {
+	width: 200px;
+	height: 18px;
+	background: #e9ecef;
+	border-radius: 4px;
+	overflow: hidden;
+	display: inline-block;
+	vertical-align: middle;
+}
+.weight-progress-bar {
+	height: 100%;
+	transition: width 0.3s;
+	border-radius: 4px;
+}
+.weight-progress-bar.ok {
+	background: #2ecc71;
+}
+.weight-progress-bar.warning {
+	background: #f39c12;
+}
+.weight-progress-bar.danger {
+	background: #e74c3c;
+}
+
+/* Empty state */
+.planchargement-empty {
+	text-align: center;
+	padding: 30px;
+	color: #999;
+	font-style: italic;
+}
+
+/* Responsive: stack columns on small screens */
+@media (max-width: 768px) {
+	.planchargement-columns {
+		flex-direction: column;
+	}
+	.planchargement-col-left,
+	.planchargement-col-right {
+		max-height: 400px;
+	}
+}
+
+/* Button styles matching Dolibarr */
+.btn-delete-um {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #c0392b;
+	font-size: 1em;
+	padding: 2px 6px;
+}
+.btn-delete-um:hover {
+	color: #e74c3c;
+}
+.btn-remove-colis {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #999;
+	font-size: 0.9em;
+	flex-shrink: 0;
+}
+.btn-remove-colis:hover {
+	color: #e74c3c;
+}

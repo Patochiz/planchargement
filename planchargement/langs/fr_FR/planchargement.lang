@@ -1,0 +1,123 @@
+# Module planchargement - French translations
+# Copyright (C) 2024 Patochiz
+
+# Module
+Module500100Name=Plan de chargement
+Module500100Desc=Gestion des plans de chargement camion
+PlanchargementDescription=Gestion des plans de chargement camion
+PlanchargementDescriptionLong=Module de planification du chargement des camions avec gestion des unités de manutention et placement 2D
+
+# Menu
+PlanchargementList=Plans de chargement
+PlanchargementNew=Nouveau chargement
+PlanchargementCard=Fiche chargement
+
+# Object: Chargement
+PlanchargementChargement=Plan de chargement
+PlanchargementDateChargement=Date de chargement
+PlanchargementCamionType=Type de camion
+PlanchargementPoidsTotal=Poids total
+PlanchargementStatut=Statut
+
+# Statuses
+PlanchargementStatusDraft=Brouillon
+PlanchargementStatusValid=Validé
+PlanchargementStatusDeparted=Parti
+PlanchargementStatusCancelled=Annulé
+
+# Object: CamionType
+PlanchargementCamionTypeCard=Fiche type de camion
+PlanchargementCamionTypeList=Types de camions
+PlanchargementCamionTypeNew=Nouveau type de camion
+PlanchargementLongueurUtile=Longueur utile (mm)
+PlanchargementLargeurUtile=Largeur utile (mm)
+PlanchargementHauteurUtile=Hauteur utile (mm)
+PlanchargementChargeUtile=Charge utile (kg)
+
+# Object: UmType
+PlanchargementUmType=Type d'UM
+PlanchargementUmTypeCard=Fiche type d'UM
+PlanchargementUmTypeList=Types d'UM
+PlanchargementUmTypeNew=Nouveau type d'UM
+PlanchargementLongueur=Longueur (mm)
+PlanchargementLargeur=Largeur (mm)
+PlanchargementHauteur=Hauteur (mm)
+PlanchargementChargeMax=Charge max (kg)
+PlanchargementGerbable=Gerbable
+
+# Object: UM
+PlanchargementUm=Unité de manutention
+PlanchargementUmList=Unités de manutention
+PlanchargementPosX=Position X (mm)
+PlanchargementPosY=Position Y (mm)
+PlanchargementRotation=Rotation
+PlanchargementUmParent=UM porteuse
+
+# Object: Commande link
+PlanchargementCommandes=Commandes rattachées
+PlanchargementAddCommande=Rattacher une commande
+PlanchargementRemoveCommande=Détacher la commande
+
+# Object: Colis
+PlanchargementColis=Colis
+PlanchargementColisNonAffectes=Colis non affectés
+PlanchargementQtyAffectee=Qté affectée
+PlanchargementQtyRestante=Qté restante
+
+# Actions
+PlanchargementValidate=Valider le chargement
+PlanchargementSetDeparted=Marquer comme parti
+PlanchargementCancel=Annuler le chargement
+PlanchargementBackToDraft=Repasser en brouillon
+
+# Permissions
+PlanchargementPermRead=Consulter les plans de chargement
+PlanchargementPermWrite=Créer/modifier les plans de chargement
+PlanchargementPermDelete=Supprimer les plans de chargement
+PlanchargementPermAdmin=Administrer le module plan de chargement
+
+# Errors
+PlanchargementErrorAlreadyValid=Ce chargement est déjà validé
+PlanchargementErrorCannotDeleteValid=Impossible de supprimer un chargement validé
+PlanchargementErrorColisStillAssigned=Des colis de cette commande sont encore affectés à des UM
+PlanchargementErrorTypeInUse=Ce type est utilisé par des chargements existants
+PlanchargementErrorOverweight=Dépassement de la charge maximale de l'UM
+PlanchargementErrorQuantityExceedsMultiplier=La quantité affectée dépasse le multiplier du colis
+PlanchargementErrorCommandeAlreadyLinked=Cette commande est déjà rattachée à ce chargement
+
+# Admin
+PlanchargementSetup=Configuration du module Plan de chargement
+PlanchargementSetupDesc=Configuration générale du module plan de chargement
+PlanchargementAbout=À propos du module Plan de chargement
+PlanchargementNumberingModule=Module de numérotation des chargements
+
+# Tabs
+PlanchargementTabGeneral=Général
+PlanchargementTabComposition=Composition
+PlanchargementTabPlan=Plan de chargement
+
+# List
+PlanchargementNbCommandes=Nb commandes
+PlanchargementNbUms=Nb UM
+
+# Card confirmations
+PlanchargementConfirmValidate=Êtes-vous sûr de vouloir valider ce chargement ?
+PlanchargementConfirmDelete=Êtes-vous sûr de vouloir supprimer ce chargement ?
+PlanchargementConfirmDeparted=Marquer ce chargement comme parti ?
+PlanchargementConfirmCancel=Annuler ce chargement ?
+PlanchargementConfirmReopen=Repasser ce chargement en brouillon ?
+PlanchargementSelectCommande=Sélectionner une commande
+PlanchargementPlanPlaceholder=La vue plan sera disponible dans une version future.
+
+# Composition UI
+PlanchargementNewUm=Nouvelle UM
+PlanchargementSelectUmType=Choisir le type d'UM
+PlanchargementDeleteUm=Supprimer l'UM
+PlanchargementConfirmDeleteUm=Supprimer cette UM et ses colis affectés ?
+PlanchargementDragDropHint=Glisser-déposer les colis vers les UM
+PlanchargementWeightCapacity=Poids / Capacité
+PlanchargementNoColisAvailable=Aucun colis disponible
+PlanchargementNoUmYet=Aucune UM créée
+PlanchargementAllColisAssigned=Tous les colis sont affectés
+PlanchargementQtyToAssign=Qté à affecter
+PlanchargementNbColis=Nb colis
