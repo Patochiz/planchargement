@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	initDragDrop();
+
+	// Enable plan view drag & drop only if the plan tab is rendered
+	if (document.getElementById('plan-truck-top')) {
+		initPlanDragDrop();
+	}
 });
 
 // ========================================
@@ -296,4 +301,133 @@ function ajaxPost(url, params, callback) {
 	};
 
 	xhr.send(params);
+}
+
+// ========================================
+// Plan view drag & drop (loading plan tab)
+// ========================================
+
+function initPlanDragDrop() {
+	var topView  = document.getElementById('plan-truck-top');
+	var overflow = document.getElementById('plan-overflow');
+
+	if (!topView) {
+		return;
+	}
+
+	// Attach dragstart on every draggable UM tile (top view + overflow)
+	var umEls = document.querySelectorAll('.plan-um[draggable="true"], .plan-um-tile[draggable="true"]');
+	umEls.forEach(function (el) {
+		el.addEventListener('dragstart', function (e) {
+			e.dataTransfer.setData('text/plain', JSON.stringify({
+				fk_um:  el.getAttribute('data-um-id'),
+				um_len: parseInt(el.getAttribute('data-um-len'), 10) || 0,
+				um_wid: parseInt(el.getAttribute('data-um-wid'), 10) || 0
+			}));
+			e.dataTransfer.effectAllowed = 'move';
+			el.style.opacity = '0.5';
+		});
+
+		el.addEventListener('dragend', function () {
+			el.style.opacity = '1';
+		});
+	});
+
+	// Drop zone: top view of the truck
+	topView.addEventListener('dragover', function (e) {
+		e.preventDefault();
+		e.dataTransfer.dropEffect = 'move';
+		topView.classList.add('drop-target');
+	});
+
+	topView.addEventListener('dragleave', function (e) {
+		// Only clear when actually leaving the container (not a child)
+		if (e.target === topView) {
+			topView.classList.remove('drop-target');
+		}
+	});
+
+	topView.addEventListener('drop', function (e) {
+		e.preventDefault();
+		topView.classList.remove('drop-target');
+
+		var data;
+		try {
+			data = JSON.parse(e.dataTransfer.getData('text/plain'));
+		} catch (err) {
+			return;
+		}
+		if (!data || !data.fk_um) {
+			return;
+		}
+
+		var rect  = topView.getBoundingClientRect();
+		var scale = parseFloat(topView.getAttribute('data-scale'));
+		if (!scale || scale <= 0) {
+			return;
+		}
+
+		// Mouse position relative to the top view container, in pixels
+		var offsetXPx = e.clientX - rect.left;
+		var offsetYPx = e.clientY - rect.top;
+
+		// Convert to mm, then anchor the UM's top-left at the drop point by
+		// subtracting half of the UM's dimensions (so the drop feels centered).
+		var posXmm = Math.round((offsetXPx / scale) - (data.um_len / 2));
+		var posYmm = Math.round((offsetYPx / scale) - (data.um_wid / 2));
+		if (posXmm < 0) { posXmm = 0; }
+		if (posYmm < 0) { posYmm = 0; }
+
+		var params = 'fk_um=' + encodeURIComponent(data.fk_um) +
+			'&pos_x=' + encodeURIComponent(posXmm) +
+			'&pos_y=' + encodeURIComponent(posYmm);
+
+		ajaxPost(planchargement_ajax_url_update_um_position, params, function (resp) {
+			if (resp && resp.success) {
+				window.location.reload();
+			} else {
+				alert((resp && resp.error) || 'Error updating position');
+			}
+		});
+	});
+
+	// Drop zone: overflow area (unplace)
+	if (overflow) {
+		overflow.addEventListener('dragover', function (e) {
+			e.preventDefault();
+			e.dataTransfer.dropEffect = 'move';
+			overflow.classList.add('drop-target');
+		});
+
+		overflow.addEventListener('dragleave', function (e) {
+			if (e.target === overflow) {
+				overflow.classList.remove('drop-target');
+			}
+		});
+
+		overflow.addEventListener('drop', function (e) {
+			e.preventDefault();
+			overflow.classList.remove('drop-target');
+
+			var data;
+			try {
+				data = JSON.parse(e.dataTransfer.getData('text/plain'));
+			} catch (err) {
+				return;
+			}
+			if (!data || !data.fk_um) {
+				return;
+			}
+
+			var params = 'fk_um=' + encodeURIComponent(data.fk_um) + '&unplace=1';
+
+			ajaxPost(planchargement_ajax_url_update_um_position, params, function (resp) {
+				if (resp && resp.success) {
+					window.location.reload();
+				} else {
+					alert((resp && resp.error) || 'Error unplacing UM');
+				}
+			});
+		});
+	}
 }

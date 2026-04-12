@@ -129,3 +129,14 @@ PlanchargementNoUmYet=Aucune UM créée
 PlanchargementAllColisAssigned=Tous les colis sont affectés
 PlanchargementQtyToAssign=Qté à affecter
 PlanchargementNbColis=Nb colis
+
+# Plan view
+PlanchargementPlanTopView=Vue de dessus
+PlanchargementPlanSideView=Vue de côté
+PlanchargementPlanTablier=Tablier
+PlanchargementPlanPorte=Porte
+PlanchargementPlanUnplaced=UM non placées
+PlanchargementPlanAllPlaced=Toutes les UM sont placées
+PlanchargementPlanUmPlaced=UM placées
+PlanchargementPlanTruckDims=Dimensions camion
+PlanchargementPlanNoTruckDims=Dimensions du camion non configurées — renseignez la longueur et la largeur utiles du type de camion.

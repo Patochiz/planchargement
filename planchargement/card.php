@@ -575,7 +575,14 @@ if ($action == 'create') {
 
 	// ============ PLAN TAB ============
 	} elseif ($tab == 'plan') {
-		print '<div class="opacitymedium" style="padding: 20px;">'.$langs->trans('PlanchargementPlanPlaceholder').'</div>';
+		// Pass JS config variables
+		print '<script>';
+		print 'var planchargement_ajax_url_update_um_position = "'.dol_buildpath('/planchargement/ajax/update_um_position.php', 1).'";';
+		print 'var planchargement_chargement_id = '.$object->id.';';
+		print 'var planchargement_readonly = '.($object->statut != Chargement::STATUS_DRAFT ? 'true' : 'false').';';
+		print '</script>';
+
+		include dol_buildpath('/planchargement/tpl/plan.tpl.php', 0);
 
 	// ============ INFO TAB ============
 	} elseif ($tab == 'info') {
