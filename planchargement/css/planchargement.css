@@ -272,6 +272,17 @@
 .btn-delete-um:hover {
 	color: #e74c3c;
 }
+.btn-edit-um {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #2980b9;
+	font-size: 1em;
+	padding: 2px 6px;
+}
+.btn-edit-um:hover {
+	color: #3498db;
+}
 .btn-remove-colis {
 	background: none;
 	border: none;

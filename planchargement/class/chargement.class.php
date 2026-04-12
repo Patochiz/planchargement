@@ -511,14 +511,27 @@ class Chargement extends CommonObject
 
 		dol_include_once('/planchargement/class/chargementum.class.php');
 
-		// Auto-generate ref_um if empty
+		// Auto-generate ref_um if empty.
+		// Use MAX of the numeric suffix of existing refs (not COUNT) so that
+		// deletes don't cause collisions: e.g. with [UM-001, UM-002, UM-003],
+		// deleting UM-001 would otherwise produce UM-003 again.
 		if (empty($ref_um)) {
-			$sql = "SELECT COUNT(rowid) as nb FROM ".MAIN_DB_PREFIX."planchargement_um";
+			$sql = "SELECT ref_um FROM ".MAIN_DB_PREFIX."planchargement_um";
 			$sql .= " WHERE fk_chargement = ".((int) $this->id);
 			$resql = $this->db->query($sql);
-			$obj = $this->db->fetch_object($resql);
-			$num = ((int) $obj->nb) + 1;
-			$ref_um = 'UM-'.sprintf('%03d', $num);
+			$max = 0;
+			if ($resql) {
+				while ($obj = $this->db->fetch_object($resql)) {
+					if (preg_match('/(\d+)\s*$/', $obj->ref_um, $m)) {
+						$n = (int) $m[1];
+						if ($n > $max) {
+							$max = $n;
+						}
+					}
+				}
+				$this->db->free($resql);
+			}
+			$ref_um = 'UM-'.sprintf('%03d', $max + 1);
 		}
 
 		$um = new ChargementUm($this->db);

@@ -133,22 +133,74 @@ function confirmCreateUm() {
 }
 
 function toggleCustomUmForm() {
+	// Called by the "New custom UM" top button: opens the form in CREATE mode
+	// (or closes it if already open in any mode).
 	var form = document.getElementById('custom-um-form');
 	if (!form) {
 		return;
 	}
-	if (form.style.display === 'none' || form.style.display === '') {
-		form.style.display = 'block';
-		var labelInput = document.getElementById('custom-um-label');
-		if (labelInput) {
-			labelInput.focus();
-		}
-	} else {
-		form.style.display = 'none';
+	if (form.style.display === 'block') {
+		closeCustomUmForm();
+		return;
+	}
+	resetCustomUmForm();
+	form.setAttribute('data-mode', 'create');
+	form.setAttribute('data-fk-um', '0');
+	form.style.display = 'block';
+	var labelInput = document.getElementById('custom-um-label');
+	if (labelInput) {
+		labelInput.focus();
 	}
 }
 
-function confirmCreateCustomUm() {
+function closeCustomUmForm() {
+	var form = document.getElementById('custom-um-form');
+	if (!form) {
+		return;
+	}
+	form.style.display = 'none';
+	form.setAttribute('data-mode', 'create');
+	form.setAttribute('data-fk-um', '0');
+	resetCustomUmForm();
+}
+
+function resetCustomUmForm() {
+	var labelEl    = document.getElementById('custom-um-label');
+	var longueurEl = document.getElementById('custom-um-longueur');
+	var largeurEl  = document.getElementById('custom-um-largeur');
+	var hauteurEl  = document.getElementById('custom-um-hauteur');
+	var gerbableEl = document.getElementById('custom-um-gerbable');
+	if (labelEl)    labelEl.value = '';
+	if (longueurEl) longueurEl.value = '';
+	if (largeurEl)  largeurEl.value = '';
+	if (hauteurEl)  hauteurEl.value = '';
+	if (gerbableEl) gerbableEl.checked = false;
+}
+
+function openEditCustomUmForm(btn) {
+	var form = document.getElementById('custom-um-form');
+	if (!form || !btn) {
+		return;
+	}
+	form.setAttribute('data-mode', 'edit');
+	form.setAttribute('data-fk-um', btn.getAttribute('data-um-id') || '0');
+
+	document.getElementById('custom-um-label').value    = btn.getAttribute('data-um-label') || '';
+	document.getElementById('custom-um-longueur').value = btn.getAttribute('data-um-longueur') || '';
+	document.getElementById('custom-um-largeur').value  = btn.getAttribute('data-um-largeur') || '';
+	document.getElementById('custom-um-hauteur').value  = btn.getAttribute('data-um-hauteur') || '';
+	document.getElementById('custom-um-gerbable').checked = (btn.getAttribute('data-um-gerbable') === '1');
+
+	form.style.display = 'block';
+	form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+	var labelInput = document.getElementById('custom-um-label');
+	if (labelInput) {
+		labelInput.focus();
+	}
+}
+
+function submitCustomUmForm() {
+	var form       = document.getElementById('custom-um-form');
 	var labelEl    = document.getElementById('custom-um-label');
 	var longueurEl = document.getElementById('custom-um-longueur');
 	var largeurEl  = document.getElementById('custom-um-largeur');
@@ -173,18 +225,37 @@ function confirmCreateCustomUm() {
 		return;
 	}
 
-	var params = 'fk_chargement=' + encodeURIComponent(planchargement_chargement_id) +
-		'&label=' + encodeURIComponent(label) +
-		'&longueur=' + encodeURIComponent(longueur) +
-		'&largeur=' + encodeURIComponent(largeur) +
-		'&hauteur=' + encodeURIComponent(hauteur) +
-		'&gerbable=' + encodeURIComponent(gerbable);
+	var mode = form ? form.getAttribute('data-mode') : 'create';
+	var url, params;
 
-	ajaxPost(planchargement_ajax_url_create_um_custom, params, function (data) {
+	if (mode === 'edit') {
+		var fk_um = form ? parseInt(form.getAttribute('data-fk-um'), 10) : 0;
+		if (!(fk_um > 0)) {
+			alert('Missing UM id');
+			return;
+		}
+		url = planchargement_ajax_url_update_um_custom;
+		params = 'fk_um=' + encodeURIComponent(fk_um) +
+			'&label=' + encodeURIComponent(label) +
+			'&longueur=' + encodeURIComponent(longueur) +
+			'&largeur=' + encodeURIComponent(largeur) +
+			'&hauteur=' + encodeURIComponent(hauteur) +
+			'&gerbable=' + encodeURIComponent(gerbable);
+	} else {
+		url = planchargement_ajax_url_create_um_custom;
+		params = 'fk_chargement=' + encodeURIComponent(planchargement_chargement_id) +
+			'&label=' + encodeURIComponent(label) +
+			'&longueur=' + encodeURIComponent(longueur) +
+			'&largeur=' + encodeURIComponent(largeur) +
+			'&hauteur=' + encodeURIComponent(hauteur) +
+			'&gerbable=' + encodeURIComponent(gerbable);
+	}
+
+	ajaxPost(url, params, function (data) {
 		if (data.success) {
 			window.location.reload();
 		} else {
-			alert(data.error || 'Error creating custom UM');
+			alert(data.error || 'Error saving custom UM');
 		}
 	});
 }

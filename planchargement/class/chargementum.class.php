@@ -348,16 +348,21 @@ class ChargementUm extends CommonObject
 			$existing_rowid = (int) $obj_existing->rowid;
 		}
 
-		$new_total = $already_assigned + $quantity;
+		// Total assigned across the whole chargement after this operation.
+		// $already_assigned counts OTHER UMs only (see SQL above), so we must
+		// also include the qty already on THIS UM ($existing_qty).
+		$new_total = $already_assigned + $existing_qty + $quantity;
 		if ($new_total > $multiplier) {
 			$this->error = 'PlanchargementErrorQuantityExceedsMultiplier';
 			return -1;
 		}
 
 		if ($existing_rowid > 0) {
-			// Update existing assignment
+			// Increment the existing assignment (additive: dragging the same
+			// package twice with qty=1 must give qty=2, not qty=1).
+			$new_qty = $existing_qty + $quantity;
 			$sql = "UPDATE ".MAIN_DB_PREFIX."planchargement_um_colis";
-			$sql .= " SET quantity = ".$quantity;
+			$sql .= " SET quantity = ".((int) $new_qty);
 			$sql .= " WHERE rowid = ".$existing_rowid;
 		} else {
 			// Insert new assignment

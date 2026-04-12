@@ -345,8 +345,8 @@ function _planchargement_package_section_title($pkg, $section_by_commandedet)
 				<button type="button" class="button" onclick="toggleCustomUmForm();"><?php echo $langs->trans('PlanchargementNewCustomUm'); ?></button>
 			</div>
 
-			<!-- Inline custom (one-shot) UM creation form -->
-			<div id="custom-um-form" class="planchargement-create-um-custom" style="display:none;">
+			<!-- Inline custom (one-shot) UM create / edit form (shared) -->
+			<div id="custom-um-form" class="planchargement-create-um-custom" style="display:none;" data-mode="create" data-fk-um="0">
 				<div class="custom-um-row">
 					<input type="text" id="custom-um-label" class="flat" placeholder="<?php echo dol_escape_htmltag($langs->trans('PlanchargementCustomUmLabel')); ?>">
 				</div>
@@ -357,8 +357,8 @@ function _planchargement_package_section_title($pkg, $section_by_commandedet)
 				</div>
 				<div class="custom-um-row">
 					<label><input type="checkbox" id="custom-um-gerbable"> <?php echo $langs->trans('PlanchargementGerbable'); ?></label>
-					<button type="button" class="button" onclick="confirmCreateCustomUm();"><?php echo $langs->trans('PlanchargementCustomUmValidate'); ?></button>
-					<button type="button" class="button button-cancel" onclick="toggleCustomUmForm();"><?php echo $langs->trans('PlanchargementCustomUmCancel'); ?></button>
+					<button type="button" class="button" onclick="submitCustomUmForm();"><?php echo $langs->trans('PlanchargementCustomUmValidate'); ?></button>
+					<button type="button" class="button button-cancel" onclick="closeCustomUmForm();"><?php echo $langs->trans('PlanchargementCustomUmCancel'); ?></button>
 				</div>
 			</div>
 			<?php } ?>
@@ -368,6 +368,7 @@ function _planchargement_package_section_title($pkg, $section_by_commandedet)
 			<?php } else { ?>
 				<?php foreach ($object->lines as $um) {
 					$ut = isset($umtype_map[$um->fk_um_type]) ? $umtype_map[$um->fk_um_type] : null;
+					$um_is_custom = $ut && !empty($ut->is_custom);
 				?>
 				<div class="planchargement-um<?php echo ($is_draft ? ' dropzone' : ''); ?>" data-um-id="<?php echo (int) $um->id; ?>">
 					<div class="planchargement-um-header" onclick="toggleUmContents(<?php echo (int) $um->id; ?>)">
@@ -377,6 +378,17 @@ function _planchargement_package_section_title($pkg, $section_by_commandedet)
 						</span>
 						<span class="um-actions">
 							<?php if ($is_draft && $user->hasRight('planchargement', 'write')) { ?>
+								<?php if ($um_is_custom) { ?>
+								<button type="button" class="btn-edit-um"
+										data-um-id="<?php echo (int) $um->id; ?>"
+										data-um-label="<?php echo dol_escape_htmltag($ut->label); ?>"
+										data-um-longueur="<?php echo (int) $ut->longueur; ?>"
+										data-um-largeur="<?php echo (int) $ut->largeur; ?>"
+										data-um-hauteur="<?php echo (int) $ut->hauteur; ?>"
+										data-um-gerbable="<?php echo (int) $ut->gerbable; ?>"
+										title="<?php echo dol_escape_htmltag($langs->trans('PlanchargementEditCustomUm')); ?>"
+										onclick="event.stopPropagation(); openEditCustomUmForm(this);">&#9998;</button>
+								<?php } ?>
 							<button type="button" class="btn-delete-um" data-um-id="<?php echo (int) $um->id; ?>" title="<?php echo $langs->trans('PlanchargementDeleteUm'); ?>" onclick="event.stopPropagation(); deleteUm(<?php echo (int) $um->id; ?>);">&times;</button>
 							<?php } ?>
 						</span>
