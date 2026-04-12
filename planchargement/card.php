@@ -564,6 +564,8 @@ if ($action == 'create') {
 		print '<script>';
 		print 'var planchargement_ajax_url_assign = "'.dol_buildpath('/planchargement/ajax/assign_colis.php', 1).'";';
 		print 'var planchargement_ajax_url_create_um = "'.dol_buildpath('/planchargement/ajax/create_um.php', 1).'";';
+		print 'var planchargement_ajax_url_create_um_custom = "'.dol_buildpath('/planchargement/ajax/create_um_custom.php', 1).'";';
+		print 'var planchargement_ajax_url_update_um_custom = "'.dol_buildpath('/planchargement/ajax/update_um_custom.php', 1).'";';
 		print 'var planchargement_ajax_url_delete_um = "'.dol_buildpath('/planchargement/ajax/delete_um.php', 1).'";';
 		print 'var planchargement_chargement_id = '.$object->id.';';
 		print 'var planchargement_readonly = '.($object->statut != Chargement::STATUS_DRAFT ? 'true' : 'false').';';

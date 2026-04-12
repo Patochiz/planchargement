@@ -32,6 +32,7 @@ if (!defined('NOCSRFCHECK')) {
 require_once '../../../main.inc.php';
 dol_include_once('/planchargement/class/chargement.class.php');
 dol_include_once('/planchargement/class/chargementum.class.php');
+dol_include_once('/planchargement/class/umtype.class.php');
 
 header('Content-Type: application/json');
 
@@ -64,8 +65,22 @@ if ($chg->statut != Chargement::STATUS_DRAFT) {
 	exit;
 }
 
+// Capture the linked UmType id BEFORE deletion so we can clean it up
+// afterwards if it was a one-shot custom type with no remaining UM.
+$linked_um_type_id = (int) $um->fk_um_type;
+
 $result = $um->delete($user);
 if ($result > 0) {
+	// Cleanup: if the linked UmType was a custom one-shot type and no other
+	// UM still references it, delete it too. UmType::delete() already guards
+	// against deletion when still in use, so this is safe to call.
+	if ($linked_um_type_id > 0) {
+		$linked_type = new UmType($db);
+		if ($linked_type->fetch($linked_um_type_id) > 0 && !empty($linked_type->is_custom)) {
+			$linked_type->delete($user);
+		}
+	}
+
 	$chg->calculateTotals();
 	echo json_encode(array(
 		'success' => true,

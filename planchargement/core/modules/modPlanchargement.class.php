@@ -201,6 +201,18 @@ class modPlanchargement extends DolibarrModules
 			return -1;
 		}
 
+		// In-place schema migrations for existing installs.
+		// CREATE TABLE IF NOT EXISTS does not add new columns to pre-existing
+		// tables, so apply ALTER statements here. Errors are swallowed when
+		// the column already exists (duplicate column = success for our purpose).
+		$migrations = array(
+			"ALTER TABLE ".MAIN_DB_PREFIX."planchargement_um_type ADD COLUMN is_custom SMALLINT NOT NULL DEFAULT 0",
+			"ALTER TABLE ".MAIN_DB_PREFIX."planchargement_um_type ADD COLUMN fk_chargement_origin INTEGER NULL",
+		);
+		foreach ($migrations as $migrationSql) {
+			$this->db->query($migrationSql, 1, 'dml'); // 2nd arg = ignore errors
+		}
+
 		$sql = array();
 
 		return $this->_init($sql, $options);

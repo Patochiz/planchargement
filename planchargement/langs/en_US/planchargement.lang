@@ -111,6 +111,14 @@ PlanchargementPlanPlaceholder=The plan view will be available in a future versio
 
 # Composition UI
 PlanchargementNewUm=New UM
+PlanchargementNewCustomUm=Custom UM
+PlanchargementEditCustomUm=Edit custom UM
+PlanchargementCustomUmLabel=Label
+PlanchargementCustomUmValidate=Save
+PlanchargementCustomUmCancel=Cancel
+PlanchargementCustomUmErrorLabelRequired=Label is required
+PlanchargementCustomUmErrorDimsRequired=All dimensions must be greater than 0
+PlanchargementCustomUmErrorNotEditable=This UM is not an editable custom UM
 PlanchargementSelectUmType=Choose UM type
 PlanchargementDeleteUm=Delete UM
 PlanchargementConfirmDeleteUm=Delete this UM and its assigned packages?

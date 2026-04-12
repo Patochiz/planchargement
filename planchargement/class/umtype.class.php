@@ -109,6 +109,23 @@ class UmType extends CommonObject
 				1 => 'Enabled',
 			),
 		),
+		'is_custom' => array(
+			'type' => 'smallint',
+			'label' => 'PlanchargementIsCustom',
+			'visible' => -2,
+			'enabled' => 1,
+			'notnull' => 1,
+			'default' => '0',
+			'position' => 600,
+		),
+		'fk_chargement_origin' => array(
+			'type' => 'integer',
+			'label' => 'PlanchargementChargementOrigin',
+			'visible' => -2,
+			'enabled' => 1,
+			'notnull' => 0,
+			'position' => 610,
+		),
 		'tms' => array(
 			'type' => 'timestamp',
 			'label' => 'DateModification',
@@ -133,6 +150,10 @@ class UmType extends CommonObject
 	public $gerbable;
 	/** @var int 0=disabled, 1=enabled */
 	public $active;
+	/** @var int 0=catalog type, 1=one-shot type created from a composition tab */
+	public $is_custom;
+	/** @var int|null For is_custom=1: rowid of the chargement that created this type */
+	public $fk_chargement_origin;
 	/** @var string */
 	public $tms;
 
@@ -185,22 +206,35 @@ class UmType extends CommonObject
 	/**
 	 * Load list of objects in memory from the database
 	 *
-	 * @param  string      $sortorder  Sort order
-	 * @param  string      $sortfield  Sort field
-	 * @param  int         $limit      Limit
-	 * @param  int         $offset     Offset
-	 * @param  string      $filter     Filter as a SQL string
-	 * @param  string      $filtermode AND or OR
-	 * @return array|int               Array of objects or <0 if error
+	 * By default, "custom" types (one-shot types created from a composition
+	 * tab, marked is_custom=1) are excluded — they belong to a single
+	 * chargement and must not pollute the admin catalog or the dropdown of
+	 * other chargements. Pass $includeCustom=true to bypass that filter.
+	 *
+	 * @param  string $sortorder     Sort order
+	 * @param  string $sortfield     Sort field
+	 * @param  int    $limit         Limit
+	 * @param  int    $offset        Offset
+	 * @param  string $filter        Filter as a SQL string
+	 * @param  string $filtermode    AND or OR
+	 * @param  bool   $includeCustom If true, also return is_custom=1 rows
+	 * @return array|int             Array of objects or <0 if error
 	 */
-	public function fetchAll($sortorder = '', $sortfield = '', $limit = 0, $offset = 0, $filter = '', $filtermode = 'AND')
+	public function fetchAll($sortorder = '', $sortfield = '', $limit = 0, $offset = 0, $filter = '', $filtermode = 'AND', $includeCustom = false)
 	{
 		$records = array();
 
 		$sql = "SELECT rowid";
 		$sql .= " FROM ".MAIN_DB_PREFIX.$this->table_element;
+		$whereParts = array();
+		if (!$includeCustom) {
+			$whereParts[] = "is_custom = 0";
+		}
 		if ($filter) {
-			$sql .= " WHERE ".$filter;
+			$whereParts[] = "(".$filter.")";
+		}
+		if (!empty($whereParts)) {
+			$sql .= " WHERE ".implode(' AND ', $whereParts);
 		}
 		if ($sortfield) {
 			$sql .= $this->db->order($sortfield, $sortorder);
