@@ -132,6 +132,63 @@ function confirmCreateUm() {
 	});
 }
 
+function toggleCustomUmForm() {
+	var form = document.getElementById('custom-um-form');
+	if (!form) {
+		return;
+	}
+	if (form.style.display === 'none' || form.style.display === '') {
+		form.style.display = 'block';
+		var labelInput = document.getElementById('custom-um-label');
+		if (labelInput) {
+			labelInput.focus();
+		}
+	} else {
+		form.style.display = 'none';
+	}
+}
+
+function confirmCreateCustomUm() {
+	var labelEl    = document.getElementById('custom-um-label');
+	var longueurEl = document.getElementById('custom-um-longueur');
+	var largeurEl  = document.getElementById('custom-um-largeur');
+	var hauteurEl  = document.getElementById('custom-um-hauteur');
+	var gerbableEl = document.getElementById('custom-um-gerbable');
+
+	var label    = labelEl ? labelEl.value.trim() : '';
+	var longueur = longueurEl ? parseInt(longueurEl.value, 10) : 0;
+	var largeur  = largeurEl ? parseInt(largeurEl.value, 10) : 0;
+	var hauteur  = hauteurEl ? parseInt(hauteurEl.value, 10) : 0;
+	var gerbable = gerbableEl && gerbableEl.checked ? 1 : 0;
+
+	if (label === '') {
+		alert('Label required');
+		if (labelEl) {
+			labelEl.focus();
+		}
+		return;
+	}
+	if (!(longueur > 0) || !(largeur > 0) || !(hauteur > 0)) {
+		alert('All dimensions must be > 0');
+		return;
+	}
+
+	var params = 'fk_chargement=' + encodeURIComponent(planchargement_chargement_id) +
+		'&label=' + encodeURIComponent(label) +
+		'&longueur=' + encodeURIComponent(longueur) +
+		'&largeur=' + encodeURIComponent(largeur) +
+		'&hauteur=' + encodeURIComponent(hauteur) +
+		'&gerbable=' + encodeURIComponent(gerbable);
+
+	ajaxPost(planchargement_ajax_url_create_um_custom, params, function (data) {
+		if (data.success) {
+			window.location.reload();
+		} else {
+			alert(data.error || 'Error creating custom UM');
+		}
+	});
+}
+
 // ========================================
 // UI Helpers
 // ========================================

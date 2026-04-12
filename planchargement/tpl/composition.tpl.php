@@ -332,6 +332,24 @@ function _planchargement_package_section_title($pkg, $section_by_commandedet)
 					} ?>
 				</select>
 				<button type="button" class="button" onclick="confirmCreateUm();"><?php echo $langs->trans('PlanchargementNewUm'); ?></button>
+				<button type="button" class="button" onclick="toggleCustomUmForm();"><?php echo $langs->trans('PlanchargementNewCustomUm'); ?></button>
+			</div>
+
+			<!-- Inline custom (one-shot) UM creation form -->
+			<div id="custom-um-form" class="planchargement-create-um-custom" style="display:none;">
+				<div class="custom-um-row">
+					<input type="text" id="custom-um-label" class="flat" placeholder="<?php echo dol_escape_htmltag($langs->trans('PlanchargementCustomUmLabel')); ?>">
+				</div>
+				<div class="custom-um-row">
+					<input type="number" id="custom-um-longueur" class="flat" min="1" placeholder="<?php echo dol_escape_htmltag($langs->trans('PlanchargementLongueur')); ?>">
+					<input type="number" id="custom-um-largeur" class="flat" min="1" placeholder="<?php echo dol_escape_htmltag($langs->trans('PlanchargementLargeur')); ?>">
+					<input type="number" id="custom-um-hauteur" class="flat" min="1" placeholder="<?php echo dol_escape_htmltag($langs->trans('PlanchargementHauteur')); ?>">
+				</div>
+				<div class="custom-um-row">
+					<label><input type="checkbox" id="custom-um-gerbable"> <?php echo $langs->trans('PlanchargementGerbable'); ?></label>
+					<button type="button" class="button" onclick="confirmCreateCustomUm();"><?php echo $langs->trans('PlanchargementCustomUmValidate'); ?></button>
+					<button type="button" class="button button-cancel" onclick="toggleCustomUmForm();"><?php echo $langs->trans('PlanchargementCustomUmCancel'); ?></button>
+				</div>
 			</div>
 			<?php } ?>
 

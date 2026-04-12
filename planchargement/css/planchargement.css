@@ -134,6 +134,31 @@
 	flex: 1;
 }
 
+/* Inline custom (one-shot) UM creation form */
+.planchargement-create-um-custom {
+	margin-bottom: 12px;
+	padding: 10px;
+	background: #f8f9fa;
+	border: 1px solid #dee2e6;
+	border-radius: 4px;
+}
+.planchargement-create-um-custom .custom-um-row {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 6px;
+}
+.planchargement-create-um-custom .custom-um-row:last-child {
+	margin-bottom: 0;
+}
+.planchargement-create-um-custom input[type="text"] {
+	flex: 1;
+}
+.planchargement-create-um-custom input[type="number"] {
+	flex: 1;
+	min-width: 0;
+}
+
 /* UM cards in right column */
 .planchargement-um {
 	margin: 8px 0;

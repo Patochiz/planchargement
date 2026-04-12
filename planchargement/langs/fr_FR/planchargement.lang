@@ -111,6 +111,12 @@ PlanchargementPlanPlaceholder=La vue plan sera disponible dans une version futur
 
 # Composition UI
 PlanchargementNewUm=Nouvelle UM
+PlanchargementNewCustomUm=UM personnalisée
+PlanchargementCustomUmLabel=Libellé
+PlanchargementCustomUmValidate=Créer
+PlanchargementCustomUmCancel=Annuler
+PlanchargementCustomUmErrorLabelRequired=Le libellé est obligatoire
+PlanchargementCustomUmErrorDimsRequired=Les dimensions doivent être supérieures à 0
 PlanchargementSelectUmType=Choisir le type d'UM
 PlanchargementDeleteUm=Supprimer l'UM
 PlanchargementConfirmDeleteUm=Supprimer cette UM et ses colis affectés ?
