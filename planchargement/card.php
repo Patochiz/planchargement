@@ -234,10 +234,10 @@ if ($action == 'removecommande' && $user->hasRight('planchargement', 'write')) {
 
 $title = $langs->trans('PlanchargementCard');
 
-// CSS and JS for composition tab
+// CSS and JS for composition and plan tabs
 $morehead = '';
 $morejsarray = array();
-if ($tab == 'composition' && $object->id > 0) {
+if (($tab == 'composition' || $tab == 'plan') && $object->id > 0) {
 	$morehead = '<link rel="stylesheet" href="'.dol_buildpath('/planchargement/css/planchargement.css', 1).'">';
 	$morejsarray = array(
 		'/planchargement/js/planchargement.js',
