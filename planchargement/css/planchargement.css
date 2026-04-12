@@ -63,39 +63,46 @@
 .planchargement-colis.draggable:active {
 	cursor: grabbing;
 }
-.planchargement-colis .colis-info {
+.planchargement-colis .colis-info,
+.planchargement-assigned-colis .colis-info {
 	flex: 1;
 	min-width: 0;
 }
-.planchargement-colis .colis-header {
+.planchargement-colis .colis-header,
+.planchargement-assigned-colis .colis-header {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	flex-wrap: wrap;
 	margin-bottom: 4px;
 }
-.planchargement-colis .colis-items {
+.planchargement-colis .colis-items,
+.planchargement-assigned-colis .colis-items {
 	margin-top: 4px;
 	padding-top: 4px;
 	border-top: 1px dotted #dee2e6;
 }
-.planchargement-colis .colis-item-line {
+.planchargement-colis .colis-item-line,
+.planchargement-assigned-colis .colis-item-line {
 	padding: 1px 0;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 4px;
 }
-.planchargement-colis .colis-item-line .item-label {
+.planchargement-colis .colis-item-line .item-label,
+.planchargement-assigned-colis .colis-item-line .item-label {
 	font-weight: 500;
 	color: #333;
 }
-.planchargement-colis .colis-item-line .item-details {
+.planchargement-colis .colis-item-line .item-details,
+.planchargement-assigned-colis .colis-item-line .item-details {
 	font-size: 1em;
 	font-weight: 700;
 	white-space: nowrap;
 	color: #333;
 }
-.planchargement-colis .colis-section-label {
+.planchargement-colis .colis-section-label,
+.planchargement-assigned-colis .colis-section-label {
 	font-weight: 700;
 	font-size: 0.95em;
 	color: #2d3748;
@@ -173,18 +180,6 @@
 }
 .planchargement-assigned-colis:last-child {
 	border-bottom: none;
-}
-.assigned-colis-info {
-	flex: 1;
-	min-width: 0;
-}
-.assigned-colis-items {
-	margin-top: 2px;
-	font-size: 0.9em;
-}
-.assigned-colis-items .item-tag {
-	display: inline-block;
-	margin-right: 6px;
 }
 
 /* Drop zone states */

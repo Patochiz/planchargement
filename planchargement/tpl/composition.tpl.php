@@ -361,17 +361,31 @@ function _planchargement_package_section_title($pkg, $section_by_commandedet)
 								$colis_color = isset($commande_colors[$c->fk_commande]) ? $commande_colors[$c->fk_commande] : '#999';
 								$cp_assigned = isset($packages_cache[(int) $c->fk_package]) ? $packages_cache[(int) $c->fk_package] : null;
 								$c_items = $cp_assigned ? $cp_assigned->items : array();
+								$c_section_title = _planchargement_package_section_title($cp_assigned, $section_by_commandedet);
 							?>
 							<div class="planchargement-assigned-colis" style="border-left: 3px solid <?php echo $colis_color; ?>; padding-left: 8px;">
-								<div class="assigned-colis-info">
-									<div>
-										<strong>#<?php echo (int) $c->fk_package; ?></strong>
-										&times;<?php echo (int) $c->quantity; ?>
+								<div class="colis-info">
+									<?php if ($c_section_title !== '') { ?>
+									<div class="colis-section-label"><?php echo dol_escape_htmltag($c_section_title); ?></div>
+									<?php } ?>
+									<div class="colis-header">
+										<strong><?php echo $langs->trans('PlanchargementColis'); ?> #<?php echo (int) $c->fk_package; ?></strong>
+										<span class="opacitymedium">
+											&times;<?php echo (int) $c->quantity; ?>
+										</span>
 									</div>
 									<?php if (!empty($c_items)) { ?>
-									<div class="assigned-colis-items opacitymedium">
+									<div class="colis-items">
 										<?php foreach ($c_items as $item) { ?>
-											<span class="item-tag"><?php echo dol_escape_htmltag(_planchargement_item_label($item, $linedet_by_id)); ?> &times;<?php echo (int) $item->quantity; ?></span>
+										<div class="colis-item-line">
+											<span class="item-label"><?php echo dol_escape_htmltag(_planchargement_item_label($item, $linedet_by_id)); ?></span>
+											<span class="item-details">
+												&times;<?php echo (int) $item->quantity; ?>
+												<?php if ($item->longueur > 0 && $item->largeur > 0) { ?>
+													&mdash; <?php echo (int) $item->longueur; ?>&times;<?php echo (int) $item->largeur; ?> mm
+												<?php } ?>
+											</span>
+										</div>
 										<?php } ?>
 									</div>
 									<?php } ?>
