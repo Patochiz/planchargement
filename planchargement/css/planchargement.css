@@ -348,26 +348,23 @@
 }
 
 /* Top view container (truck as seen from above) */
+/* NOTE: background (1 m × 1 m grid) is set inline on the element */
 .plan-truck-top {
 	position: relative;
 	border: 2px solid #2c3e50;
-	background:
-		repeating-linear-gradient(
-			90deg,
-			#ecf0f1 0,
-			#ecf0f1 49px,
-			#d5dbdb 49px,
-			#d5dbdb 50px
-		),
-		repeating-linear-gradient(
-			0deg,
-			#ecf0f1 0,
-			#ecf0f1 49px,
-			#d5dbdb 49px,
-			#d5dbdb 50px
-		);
 	box-sizing: border-box;
 	overflow: hidden;
+}
+
+/* Drop preview ghost shown while dragging a UM over the top view */
+.plan-drop-ghost {
+	position: absolute;
+	border: 2px dashed #27ae60;
+	background: rgba(39, 174, 96, 0.18);
+	pointer-events: none;
+	display: none;
+	z-index: 20;
+	box-sizing: border-box;
 }
 .plan-truck-top.plan-editable {
 	cursor: crosshair;
@@ -414,10 +411,10 @@
 }
 
 /* Side view container (read-only projection onto X-Z plane) */
+/* NOTE: background (1 m × 1 m grid) is set inline on the element */
 .plan-truck-side {
 	position: relative;
 	border: 2px solid #2c3e50;
-	background: #ecf0f1;
 	box-sizing: border-box;
 	overflow: hidden;
 }

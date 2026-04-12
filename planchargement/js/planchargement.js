@@ -310,77 +310,152 @@ function ajaxPost(url, params, callback) {
 function initPlanDragDrop() {
 	var topView  = document.getElementById('plan-truck-top');
 	var overflow = document.getElementById('plan-overflow');
+	var ghost    = document.getElementById('plan-drop-ghost');
 
 	if (!topView) {
 		return;
 	}
 
-	// Attach dragstart on every draggable UM tile (top view + overflow)
+	var scale      = parseFloat(topView.getAttribute('data-scale')) || 0;
+	var snapMm     = parseInt(topView.getAttribute('data-snap-mm'), 10) || 100;
+	var truckLenMm = parseInt(topView.getAttribute('data-truck-len'), 10) || 0;
+	var truckWidMm = parseInt(topView.getAttribute('data-truck-wid'), 10) || 0;
+
+	// Shared state for the current drag (dataTransfer.getData is not readable
+	// during dragover on most browsers, so we mirror the payload here).
+	var dragState = null;
+
+	function snap(mm) {
+		return Math.round(mm / snapMm) * snapMm;
+	}
+
+	// Attach dragstart on every draggable UM (top view + overflow tiles)
 	var umEls = document.querySelectorAll('.plan-um[draggable="true"], .plan-um-tile[draggable="true"]');
 	umEls.forEach(function (el) {
 		el.addEventListener('dragstart', function (e) {
-			e.dataTransfer.setData('text/plain', JSON.stringify({
-				fk_um:  el.getAttribute('data-um-id'),
-				um_len: parseInt(el.getAttribute('data-um-len'), 10) || 0,
-				um_wid: parseInt(el.getAttribute('data-um-wid'), 10) || 0
-			}));
+			var umLen = parseInt(el.getAttribute('data-um-len'), 10) || 0;
+			var umWid = parseInt(el.getAttribute('data-um-wid'), 10) || 0;
+
+			// Where on the UM the user clicked, in mm — so the UM stays
+			// anchored to that point on drop (no recentering surprise).
+			var elRect = el.getBoundingClientRect();
+			var grabOffsetXmm = 0;
+			var grabOffsetYmm = 0;
+			if (el.classList.contains('plan-um') && scale > 0) {
+				grabOffsetXmm = (e.clientX - elRect.left) / scale;
+				grabOffsetYmm = (e.clientY - elRect.top) / scale;
+			} else {
+				// For overflow tiles, center the UM under the cursor on drop
+				grabOffsetXmm = umLen / 2;
+				grabOffsetYmm = umWid / 2;
+			}
+
+			dragState = {
+				fk_um:         el.getAttribute('data-um-id'),
+				um_len:        umLen,
+				um_wid:        umWid,
+				grab_off_x_mm: grabOffsetXmm,
+				grab_off_y_mm: grabOffsetYmm
+			};
+
+			e.dataTransfer.setData('text/plain', JSON.stringify(dragState));
 			e.dataTransfer.effectAllowed = 'move';
-			el.style.opacity = '0.5';
+			el.style.opacity = '0.4';
+
+			// Prime the ghost with the UM size
+			if (ghost && scale > 0) {
+				ghost.style.width  = Math.round(umLen * scale) + 'px';
+				ghost.style.height = Math.round(umWid * scale) + 'px';
+			}
 		});
 
 		el.addEventListener('dragend', function () {
 			el.style.opacity = '1';
+			if (ghost) {
+				ghost.style.display = 'none';
+			}
+			dragState = null;
 		});
 	});
+
+	// Compute the snapped, clamped (pos_x, pos_y) in mm from a dragover/drop
+	// event on the top view.
+	function computeDropPosMm(e) {
+		if (!dragState || !scale) {
+			return null;
+		}
+		var rect = topView.getBoundingClientRect();
+		var cursorXmm = (e.clientX - rect.left) / scale;
+		var cursorYmm = (e.clientY - rect.top) / scale;
+
+		var posXmm = snap(cursorXmm - dragState.grab_off_x_mm);
+		var posYmm = snap(cursorYmm - dragState.grab_off_y_mm);
+
+		// Clamp inside the truck so the UM never overflows the container
+		if (posXmm < 0) { posXmm = 0; }
+		if (posYmm < 0) { posYmm = 0; }
+		if (truckLenMm > 0 && posXmm + dragState.um_len > truckLenMm) {
+			posXmm = Math.max(0, truckLenMm - dragState.um_len);
+		}
+		if (truckWidMm > 0 && posYmm + dragState.um_wid > truckWidMm) {
+			posYmm = Math.max(0, truckWidMm - dragState.um_wid);
+		}
+		return { pos_x: posXmm, pos_y: posYmm };
+	}
 
 	// Drop zone: top view of the truck
 	topView.addEventListener('dragover', function (e) {
 		e.preventDefault();
 		e.dataTransfer.dropEffect = 'move';
 		topView.classList.add('drop-target');
+
+		if (ghost && dragState) {
+			var pos = computeDropPosMm(e);
+			if (pos) {
+				ghost.style.left = Math.round(pos.pos_x * scale) + 'px';
+				ghost.style.top  = Math.round(pos.pos_y * scale) + 'px';
+				ghost.style.display = 'block';
+			}
+		}
 	});
 
 	topView.addEventListener('dragleave', function (e) {
 		// Only clear when actually leaving the container (not a child)
 		if (e.target === topView) {
 			topView.classList.remove('drop-target');
+			if (ghost) {
+				ghost.style.display = 'none';
+			}
 		}
 	});
 
 	topView.addEventListener('drop', function (e) {
 		e.preventDefault();
 		topView.classList.remove('drop-target');
-
-		var data;
-		try {
-			data = JSON.parse(e.dataTransfer.getData('text/plain'));
-		} catch (err) {
-			return;
-		}
-		if (!data || !data.fk_um) {
-			return;
+		if (ghost) {
+			ghost.style.display = 'none';
 		}
 
-		var rect  = topView.getBoundingClientRect();
-		var scale = parseFloat(topView.getAttribute('data-scale'));
-		if (!scale || scale <= 0) {
+		if (!dragState) {
+			// dataTransfer fallback (e.g. drag from outside window)
+			try {
+				dragState = JSON.parse(e.dataTransfer.getData('text/plain'));
+			} catch (err) {
+				return;
+			}
+			if (!dragState || !dragState.fk_um) {
+				return;
+			}
+		}
+
+		var pos = computeDropPosMm(e);
+		if (!pos) {
 			return;
 		}
 
-		// Mouse position relative to the top view container, in pixels
-		var offsetXPx = e.clientX - rect.left;
-		var offsetYPx = e.clientY - rect.top;
-
-		// Convert to mm, then anchor the UM's top-left at the drop point by
-		// subtracting half of the UM's dimensions (so the drop feels centered).
-		var posXmm = Math.round((offsetXPx / scale) - (data.um_len / 2));
-		var posYmm = Math.round((offsetYPx / scale) - (data.um_wid / 2));
-		if (posXmm < 0) { posXmm = 0; }
-		if (posYmm < 0) { posYmm = 0; }
-
-		var params = 'fk_um=' + encodeURIComponent(data.fk_um) +
-			'&pos_x=' + encodeURIComponent(posXmm) +
-			'&pos_y=' + encodeURIComponent(posYmm);
+		var params = 'fk_um=' + encodeURIComponent(dragState.fk_um) +
+			'&pos_x=' + encodeURIComponent(pos.pos_x) +
+			'&pos_y=' + encodeURIComponent(pos.pos_y);
 
 		ajaxPost(planchargement_ajax_url_update_um_position, params, function (resp) {
 			if (resp && resp.success) {
@@ -409,11 +484,13 @@ function initPlanDragDrop() {
 			e.preventDefault();
 			overflow.classList.remove('drop-target');
 
-			var data;
-			try {
-				data = JSON.parse(e.dataTransfer.getData('text/plain'));
-			} catch (err) {
-				return;
+			var data = dragState;
+			if (!data) {
+				try {
+					data = JSON.parse(e.dataTransfer.getData('text/plain'));
+				} catch (err) {
+					return;
+				}
 			}
 			if (!data || !data.fk_um) {
 				return;

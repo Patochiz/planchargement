@@ -99,6 +99,17 @@ $top_h_px  = ($truck_wid > 0) ? (int) round($truck_wid * $scale) : 0;
 $side_h_px = ($truck_hei > 0) ? (int) round($truck_hei * $scale) : 0;
 $top_w_px  = ($truck_len > 0) ? (int) round($truck_len * $scale) : $view_width_px;
 
+// Grid (1 m × 1 m) drawn as a background gradient on the top/side views
+$grid_mm = 1000;
+$grid_px = $scale * $grid_mm;
+$grid_bg = "background-color:#ecf0f1;"
+	." background-image:"
+	." repeating-linear-gradient(90deg, rgba(44,62,80,0.18) 0 1px, transparent 1px ".$grid_px."px),"
+	." repeating-linear-gradient(0deg,  rgba(44,62,80,0.18) 0 1px, transparent 1px ".$grid_px."px);";
+
+// Snap-to-grid step (mm). 100 mm = 10 cm feels right for pallet placement.
+$snap_mm = 100;
+
 if ($truck_len <= 0 || $truck_wid <= 0) {
 	print '<div class="opacitymedium" style="padding: 20px;">';
 	print $langs->trans('PlanchargementPlanNoTruckDims');
@@ -137,7 +148,9 @@ if ($truck_len <= 0 || $truck_wid <= 0) {
 		data-truck-len="<?php echo (int) $truck_len; ?>"
 		data-truck-wid="<?php echo (int) $truck_wid; ?>"
 		data-scale="<?php echo (float) $scale; ?>"
-		style="width: <?php echo $top_w_px; ?>px; height: <?php echo $top_h_px; ?>px;">
+		data-snap-mm="<?php echo (int) $snap_mm; ?>"
+		style="width: <?php echo $top_w_px; ?>px; height: <?php echo $top_h_px; ?>px; <?php echo $grid_bg; ?>">
+		<div id="plan-drop-ghost" class="plan-drop-ghost"></div>
 		<?php
 		foreach ($object->lines as $um) {
 			$ut = isset($umtype_map[$um->fk_um_type]) ? $umtype_map[$um->fk_um_type] : null;
@@ -183,7 +196,7 @@ if ($truck_len <= 0 || $truck_wid <= 0) {
 	<?php if ($truck_hei > 0) { ?>
 	<div class="plan-view-label"><?php echo $langs->trans('PlanchargementPlanSideView'); ?></div>
 	<div class="plan-truck-side"
-		style="width: <?php echo $top_w_px; ?>px; height: <?php echo $side_h_px; ?>px;">
+		style="width: <?php echo $top_w_px; ?>px; height: <?php echo $side_h_px; ?>px; <?php echo $grid_bg; ?>">
 		<?php
 		foreach ($object->lines as $um) {
 			$ut = isset($umtype_map[$um->fk_um_type]) ? $umtype_map[$um->fk_um_type] : null;
