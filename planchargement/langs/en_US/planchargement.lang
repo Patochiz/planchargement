@@ -133,6 +133,8 @@ PlanchargementNbColis=# Packages
 # Plan view
 PlanchargementPlanTopView=Top view
 PlanchargementPlanSideView=Side view
+PlanchargementPlanSideViewUpper=Side view (upper half)
+PlanchargementPlanSideViewLower=Side view (lower half)
 PlanchargementPlanTablier=Cab
 PlanchargementPlanPorte=Door
 PlanchargementPlanUnplaced=Unplaced UMs
@@ -141,5 +143,6 @@ PlanchargementPlanUmPlaced=UMs placed
 PlanchargementPlanTruckDims=Truck dimensions
 PlanchargementPlanNoTruckDims=Truck dimensions not configured — set usable length and width on the truck type.
 PlanchargementPlanRotateHint=Double-click to rotate
+PlanchargementPlanStackHint=Drop a UM on top to stack it
 PlanchargementPlanOverlap=This position overlaps another UM
 PlanchargementPlanCannotRotate=Cannot rotate (overlap or overflow)

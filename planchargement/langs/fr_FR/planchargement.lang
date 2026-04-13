@@ -133,6 +133,8 @@ PlanchargementNbColis=Nb colis
 # Plan view
 PlanchargementPlanTopView=Vue de dessus
 PlanchargementPlanSideView=Vue de côté
+PlanchargementPlanSideViewUpper=Vue de côté (haute)
+PlanchargementPlanSideViewLower=Vue de côté (basse)
 PlanchargementPlanTablier=Tablier
 PlanchargementPlanPorte=Porte
 PlanchargementPlanUnplaced=UM non placées
@@ -141,5 +143,6 @@ PlanchargementPlanUmPlaced=UM placées
 PlanchargementPlanTruckDims=Dimensions camion
 PlanchargementPlanNoTruckDims=Dimensions du camion non configurées — renseignez la longueur et la largeur utiles du type de camion.
 PlanchargementPlanRotateHint=Double-clic pour pivoter
+PlanchargementPlanStackHint=Déposer une UM dessus pour la gerber
 PlanchargementPlanOverlap=Cette position chevauche une autre UM
 PlanchargementPlanCannotRotate=Impossible de pivoter (chevauchement ou débordement)

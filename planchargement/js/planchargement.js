@@ -367,9 +367,12 @@ function initPlanDragDrop() {
 	}
 
 	// Attach dragstart on every draggable UM (top view + overflow tiles)
-	var umEls = document.querySelectorAll('.plan-um[draggable="true"], .plan-um-tile[draggable="true"]');
+	var umEls = document.querySelectorAll(
+		'.plan-um[draggable="true"], .plan-um-tile[draggable="true"], .plan-um-stack-chip[draggable="true"]'
+	);
 	umEls.forEach(function (el) {
 		el.addEventListener('dragstart', function (e) {
+			e.stopPropagation();
 			var umLen = parseInt(el.getAttribute('data-um-len'), 10) || 0;
 			var umWid = parseInt(el.getAttribute('data-um-wid'), 10) || 0;
 
@@ -382,18 +385,23 @@ function initPlanDragDrop() {
 				grabOffsetXmm = (e.clientX - elRect.left) / scale;
 				grabOffsetYmm = (e.clientY - elRect.top) / scale;
 			} else {
-				// For overflow tiles, center the UM under the cursor on drop
+				// For overflow tiles and stack chips, center the UM on drop
 				grabOffsetXmm = umLen / 2;
 				grabOffsetYmm = umWid / 2;
 			}
 
 			var fkUm = el.getAttribute('data-um-id');
+			var isStackChip = el.classList.contains('plan-um-stack-chip');
 			dragState = {
 				fk_um:         fkUm,
 				um_len:        umLen,
 				um_wid:        umWid,
 				grab_off_x_mm: grabOffsetXmm,
 				grab_off_y_mm: grabOffsetYmm,
+				from_chip:     isStackChip,
+				// A stack chip (child) or a UM that already has children
+				// cannot be stacked again (1 level deep only).
+				can_stack:     !isStackChip && (parseInt(el.getAttribute('data-um-nb-children'), 10) || 0) === 0,
 				others:        snapshotPlacedRects(fkUm)
 			};
 
@@ -412,10 +420,52 @@ function initPlanDragDrop() {
 			el.style.opacity = '1';
 			if (ghost) {
 				ghost.style.display = 'none';
+				ghost.classList.remove('invalid');
+				ghost.classList.remove('stacking');
 			}
+			clearStackTarget();
 			dragState = null;
 		});
 	});
+
+	// ----- Stacking target detection -----
+	var currentStackTarget = null;
+
+	function clearStackTarget() {
+		if (currentStackTarget) {
+			currentStackTarget.classList.remove('stacking-target');
+			currentStackTarget = null;
+		}
+	}
+
+	// Return the parent UM DOM node under the cursor if it is a valid
+	// stacking target for the current dragState, or null.
+	function findStackTargetAt(e) {
+		if (!dragState || !dragState.can_stack) {
+			return null;
+		}
+		var hovered = document.elementFromPoint(e.clientX, e.clientY);
+		if (!hovered) {
+			return null;
+		}
+		var parentEl = hovered.closest('.plan-um');
+		if (!parentEl) {
+			return null;
+		}
+		if (parentEl.getAttribute('data-um-id') === dragState.fk_um) {
+			return null; // self
+		}
+		if ((parseInt(parentEl.getAttribute('data-um-gerbable'), 10) || 0) !== 1) {
+			return null;
+		}
+		// Dragged UM must fit within the parent footprint
+		var pLen = parseInt(parentEl.getAttribute('data-um-len'), 10) || 0;
+		var pWid = parseInt(parentEl.getAttribute('data-um-wid'), 10) || 0;
+		if (dragState.um_len > pLen || dragState.um_wid > pWid) {
+			return null;
+		}
+		return parentEl;
+	}
 
 	// Compute the snapped, clamped (pos_x, pos_y) in mm from a dragover/drop
 	// event on the top view.
@@ -448,19 +498,52 @@ function initPlanDragDrop() {
 		e.dataTransfer.dropEffect = 'move';
 		topView.classList.add('drop-target');
 
-		if (ghost && dragState) {
-			var pos = computeDropPosMm(e);
-			if (pos) {
-				var bad = hasOverlap(pos.pos_x, pos.pos_y, dragState.um_len, dragState.um_wid, dragState.others);
-				ghost.style.left = Math.round(pos.pos_x * scale) + 'px';
-				ghost.style.top  = Math.round(pos.pos_y * scale) + 'px';
-				ghost.style.display = 'block';
-				if (bad) {
-					ghost.classList.add('invalid');
-					e.dataTransfer.dropEffect = 'none';
-				} else {
-					ghost.classList.remove('invalid');
-				}
+		if (!ghost || !dragState) {
+			return;
+		}
+
+		// First check if we are hovering a valid stacking parent
+		var stackTarget = findStackTargetAt(e);
+		if (stackTarget !== currentStackTarget) {
+			clearStackTarget();
+			if (stackTarget) {
+				stackTarget.classList.add('stacking-target');
+				currentStackTarget = stackTarget;
+			}
+		}
+
+		if (stackTarget) {
+			// Stacking mode: ghost matches the parent footprint, violet color
+			var pLeft = parseInt(stackTarget.style.left, 10) || 0;
+			var pTop  = parseInt(stackTarget.style.top,  10) || 0;
+			var pW    = stackTarget.offsetWidth;
+			var pH    = stackTarget.offsetHeight;
+			ghost.style.left   = pLeft + 'px';
+			ghost.style.top    = pTop + 'px';
+			ghost.style.width  = pW + 'px';
+			ghost.style.height = pH + 'px';
+			ghost.style.display = 'block';
+			ghost.classList.add('stacking');
+			ghost.classList.remove('invalid');
+			return;
+		}
+
+		// Placement mode: restore the ghost to the dragged UM size
+		ghost.classList.remove('stacking');
+		ghost.style.width  = Math.round(dragState.um_len * scale) + 'px';
+		ghost.style.height = Math.round(dragState.um_wid * scale) + 'px';
+
+		var pos = computeDropPosMm(e);
+		if (pos) {
+			var bad = hasOverlap(pos.pos_x, pos.pos_y, dragState.um_len, dragState.um_wid, dragState.others);
+			ghost.style.left = Math.round(pos.pos_x * scale) + 'px';
+			ghost.style.top  = Math.round(pos.pos_y * scale) + 'px';
+			ghost.style.display = 'block';
+			if (bad) {
+				ghost.classList.add('invalid');
+				e.dataTransfer.dropEffect = 'none';
+			} else {
+				ghost.classList.remove('invalid');
 			}
 		}
 	});
@@ -481,6 +564,7 @@ function initPlanDragDrop() {
 		if (ghost) {
 			ghost.style.display = 'none';
 			ghost.classList.remove('invalid');
+			ghost.classList.remove('stacking');
 		}
 
 		if (!dragState) {
@@ -494,6 +578,27 @@ function initPlanDragDrop() {
 			if (!dragState || !dragState.fk_um) {
 				return;
 			}
+		}
+
+		// Stacking mode: target is a placed gerbable UM
+		var stackTarget = findStackTargetAt(e);
+		clearStackTarget();
+		if (stackTarget) {
+			var parentId = stackTarget.getAttribute('data-um-id');
+			var stackParams = 'fk_um=' + encodeURIComponent(dragState.fk_um) +
+				'&fk_um_parent=' + encodeURIComponent(parentId);
+			ajaxPost(planchargement_ajax_url_stack_um, stackParams, function (resp) {
+				if (resp && resp.success) {
+					window.location.reload();
+				} else if (resp && resp.error === 'NotGerbable') {
+					alert('L\'UM cible n\'est pas gerbable');
+				} else if (resp && resp.error === 'ChildTooBig') {
+					alert('L\'UM déposée ne rentre pas sur l\'UM cible');
+				} else {
+					alert((resp && resp.error) || 'Erreur lors du gerbage');
+				}
+			});
+			return;
 		}
 
 		var pos = computeDropPosMm(e);
