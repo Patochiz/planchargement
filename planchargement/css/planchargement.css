@@ -364,6 +364,26 @@
 	margin: 14px 0 6px 0;
 }
 
+/* Each view (top / upper side / lower side) sits inside a block that
+   reserves 90px of padding on the left for the tractor schematic. The
+   tractor is an absolutely positioned sibling of the truck box and is
+   aligned to the bottom of the block so its wheels/hitch line up with
+   the trailer drawing, regardless of what label/ruler sit above. */
+.plan-view-block {
+	position: relative;
+	padding-left: 90px;
+}
+.plan-tractor {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 84px;
+	pointer-events: none;
+}
+.plan-tractor svg {
+	display: block;
+}
+
 /* Axis labels around the top view */
 .plan-axis-label {
 	display: inline-block;

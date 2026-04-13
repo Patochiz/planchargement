@@ -359,7 +359,8 @@ $pdf->Cell($usable_w - 4, 5, implode('     -     ', $stats), 0, 1, 'L');
 $draw_top    = $stats_y + 6 + 4; // below stats + gap
 $draw_bottom = $page_h - $margin - 4;
 $draw_h_max  = $draw_bottom - $draw_top;
-$draw_w_max  = $usable_w - 10; // reserve left margin for ruler / labels
+$tractor_w_mm = 22; // horizontal space reserved for the tractor schematic
+$draw_w_max  = $usable_w - 10 - $tractor_w_mm; // reserve left margin + tractor
 
 // Compute scale so top view + 2 side views (when hei > 0) fit.
 $gap_views   = 4;    // mm between the 3 views
@@ -375,8 +376,8 @@ $top_w_mm    = $truck_len * $scale;
 $top_h_mm    = $truck_wid * $scale;
 $side_h_mm   = $truck_hei * $scale;
 
-// Horizontal centering in usable area
-$draw_x = $margin + 5 + (($draw_w_max - $top_w_mm) / 2);
+// Horizontal centering in the remaining area (after tractor column)
+$draw_x = $margin + 5 + $tractor_w_mm + (($draw_w_max - $top_w_mm) / 2);
 
 $y_cursor = $draw_top;
 
@@ -420,12 +421,85 @@ $draw_um_rect = function ($pdf, $x, $y, $w, $h, $rgb, $label) {
 	$pdf->SetTextColor(0, 0, 0);
 };
 
+// Rough tractor schematic (top view) drawn inside the [x, y, w, h] box,
+// preserving its 240x100 aspect and right-aligned so the 5th wheel (hitch)
+// touches the trailer's left edge. Same style as tpl/plan.tpl.php.
+$draw_tractor_top = function ($pdf, $x, $y, $w, $h) {
+	$vw = 240; $vh = 100;
+	$s = min($w / $vw, $h / $vh);
+	if ($s <= 0) {
+		return;
+	}
+	$dw = $vw * $s; $dh = $vh * $s;
+	$ox = $x + $w - $dw;         // right-aligned (hitch touches trailer)
+	$oy = $y + ($h - $dh) / 2;   // vertically centered on the view
+	$pdf->SetLineWidth(0.2);
+	// chassis
+	$pdf->SetFillColor(149, 165, 166);
+	$pdf->SetDrawColor(44, 62, 80);
+	$pdf->Rect($ox + 20 * $s, $oy + 35 * $s, 210 * $s, 30 * $s, 'DF');
+	// cab
+	$pdf->SetFillColor(52, 73, 94);
+	$pdf->Rect($ox + 20 * $s, $oy + 10 * $s, 75 * $s, 80 * $s, 'DF');
+	// wheels (4 rear tandem + 2 front)
+	$pdf->SetFillColor(44, 62, 80);
+	$pdf->Rect($ox + 35 * $s,  $oy + 0 * $s,  18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 35 * $s,  $oy + 86 * $s, 18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 140 * $s, $oy + 0 * $s,  18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 140 * $s, $oy + 86 * $s, 18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 165 * $s, $oy + 0 * $s,  18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 165 * $s, $oy + 86 * $s, 18 * $s, 14 * $s, 'F');
+	// 5th wheel (hitch) circle
+	$pdf->SetFillColor(127, 140, 141);
+	$pdf->SetDrawColor(44, 62, 80);
+	$pdf->Ellipse($ox + 205 * $s, $oy + 50 * $s, 8 * $s, 8 * $s, 0, 0, 360, 'DF');
+};
+
+// Rough tractor schematic (side view). Aligned to the bottom of the view so
+// wheels sit on the same ground line as the trailer.
+$draw_tractor_side = function ($pdf, $x, $y, $w, $h) {
+	$vw = 240; $vh = 100;
+	$s = min($w / $vw, $h / $vh);
+	if ($s <= 0) {
+		return;
+	}
+	$dw = $vw * $s; $dh = $vh * $s;
+	$ox = $x + $w - $dw;   // right-aligned (rear touches trailer)
+	$oy = $y + $h - $dh;   // bottom-aligned (wheels on ground line)
+	$pdf->SetLineWidth(0.2);
+	// chassis beam
+	$pdf->SetFillColor(149, 165, 166);
+	$pdf->SetDrawColor(44, 62, 80);
+	$pdf->Rect($ox + 40 * $s, $oy + 62 * $s, 190 * $s, 12 * $s, 'DF');
+	// cab polygon (hood + windshield + cabin silhouette)
+	$pdf->SetFillColor(52, 73, 94);
+	$poly = array(
+		$ox + 5 * $s,   $oy + 75 * $s,
+		$ox + 5 * $s,   $oy + 45 * $s,
+		$ox + 50 * $s,  $oy + 45 * $s,
+		$ox + 60 * $s,  $oy + 22 * $s,
+		$ox + 105 * $s, $oy + 22 * $s,
+		$ox + 105 * $s, $oy + 75 * $s,
+	);
+	$pdf->Polygon($poly, 'DF');
+	// wheels (3 tires with hubs)
+	$pdf->SetFillColor(44, 62, 80);
+	$pdf->Ellipse($ox + 30 * $s,  $oy + 82 * $s, 13 * $s, 13 * $s, 0, 0, 360, 'F');
+	$pdf->Ellipse($ox + 170 * $s, $oy + 82 * $s, 13 * $s, 13 * $s, 0, 0, 360, 'F');
+	$pdf->Ellipse($ox + 200 * $s, $oy + 82 * $s, 13 * $s, 13 * $s, 0, 0, 360, 'F');
+	$pdf->SetFillColor(127, 140, 141);
+	$pdf->Ellipse($ox + 30 * $s,  $oy + 82 * $s, 5 * $s, 5 * $s, 0, 0, 360, 'F');
+	$pdf->Ellipse($ox + 170 * $s, $oy + 82 * $s, 5 * $s, 5 * $s, 0, 0, 360, 'F');
+	$pdf->Ellipse($ox + 200 * $s, $oy + 82 * $s, 5 * $s, 5 * $s, 0, 0, 360, 'F');
+};
+
 // ---- UPPER SIDE VIEW ----
 if ($truck_hei > 0) {
 	$pdf->SetFont('helvetica', 'B', 8);
 	$pdf->SetTextColor(44, 62, 80);
 	$pdf->SetXY($draw_x, $y_cursor - 3);
 	$pdf->Cell($top_w_mm, 3, $langs->transnoentities('PlanchargementPlanSideViewUpper'), 0, 0, 'L');
+	$draw_tractor_side($pdf, $draw_x - $tractor_w_mm, $y_cursor, $tractor_w_mm - 2, $side_h_mm);
 	$draw_grid($pdf, $draw_x, $y_cursor, $top_w_mm, $side_h_mm);
 
 	foreach ($object->lines as $um) {
@@ -476,6 +550,7 @@ $pdf->Cell(7, 3, $langs->transnoentities('PlanchargementPlanTablier'), 0, 0, 'R'
 $pdf->SetXY($draw_x + $top_w_mm + 1, $y_cursor + ($top_h_mm / 2) - 1.5);
 $pdf->Cell(7, 3, $langs->transnoentities('PlanchargementPlanPorte'), 0, 0, 'L');
 
+$draw_tractor_top($pdf, $draw_x - $tractor_w_mm, $y_cursor, $tractor_w_mm - 2, $top_h_mm);
 $draw_grid($pdf, $draw_x, $y_cursor, $top_w_mm, $top_h_mm);
 
 // Draw each placed (non-child) UM
@@ -507,6 +582,7 @@ if ($truck_hei > 0) {
 	$pdf->SetTextColor(44, 62, 80);
 	$pdf->SetXY($draw_x, $y_cursor - 3);
 	$pdf->Cell($top_w_mm, 3, $langs->transnoentities('PlanchargementPlanSideViewLower'), 0, 0, 'L');
+	$draw_tractor_side($pdf, $draw_x - $tractor_w_mm, $y_cursor, $tractor_w_mm - 2, $side_h_mm);
 	$draw_grid($pdf, $draw_x, $y_cursor, $top_w_mm, $side_h_mm);
 
 	foreach ($object->lines as $um) {
