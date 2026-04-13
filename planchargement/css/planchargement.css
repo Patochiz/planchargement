@@ -366,6 +366,10 @@
 	z-index: 20;
 	box-sizing: border-box;
 }
+.plan-drop-ghost.invalid {
+	border-color: #c0392b;
+	background: rgba(192, 57, 43, 0.22);
+}
 .plan-truck-top.plan-editable {
 	cursor: crosshair;
 }

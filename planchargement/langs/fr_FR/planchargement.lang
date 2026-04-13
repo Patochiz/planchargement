@@ -140,3 +140,6 @@ PlanchargementPlanAllPlaced=Toutes les UM sont placées
 PlanchargementPlanUmPlaced=UM placées
 PlanchargementPlanTruckDims=Dimensions camion
 PlanchargementPlanNoTruckDims=Dimensions du camion non configurées — renseignez la longueur et la largeur utiles du type de camion.
+PlanchargementPlanRotateHint=Double-clic pour pivoter
+PlanchargementPlanOverlap=Cette position chevauche une autre UM
+PlanchargementPlanCannotRotate=Impossible de pivoter (chevauchement ou débordement)

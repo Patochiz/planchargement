@@ -238,6 +238,60 @@ class ChargementUm extends CommonObject
 	}
 
 	/**
+	 * Find another placed UM in the same chargement that overlaps the given
+	 * axis-aligned rectangle (mm). Returns the conflicting rowid or 0 if no
+	 * conflict. UMs stacked via fk_um_parent share the same footprint as
+	 * their parent and are excluded from the check.
+	 *
+	 * @param  DoliDB $db             Database handler
+	 * @param  int    $fk_chargement  Loading plan id
+	 * @param  int    $exclude_fk_um  UM id to exclude (the one being moved)
+	 * @param  int    $pos_x          New X (mm)
+	 * @param  int    $pos_y          New Y (mm)
+	 * @param  int    $um_len         UM length on the X axis (mm), already
+	 *                                rotation-adjusted by the caller
+	 * @param  int    $um_wid         UM width on the Y axis (mm), already
+	 *                                rotation-adjusted by the caller
+	 * @return int                    rowid of the conflicting UM, or 0
+	 */
+	public static function findOverlap(DoliDB $db, $fk_chargement, $exclude_fk_um, $pos_x, $pos_y, $um_len, $um_wid)
+	{
+		$sql  = "SELECT u.rowid, u.pos_x, u.pos_y, u.rotation, u.fk_um_parent,";
+		$sql .= " t.longueur, t.largeur";
+		$sql .= " FROM ".MAIN_DB_PREFIX."planchargement_um u";
+		$sql .= " INNER JOIN ".MAIN_DB_PREFIX."planchargement_um_type t ON t.rowid = u.fk_um_type";
+		$sql .= " WHERE u.fk_chargement = ".((int) $fk_chargement);
+		$sql .= " AND u.rowid <> ".((int) $exclude_fk_um);
+		$sql .= " AND u.pos_x IS NOT NULL AND u.pos_y IS NOT NULL";
+		$sql .= " AND (u.fk_um_parent IS NULL OR u.fk_um_parent = 0)";
+
+		$resql = $db->query($sql);
+		if (!$resql) {
+			return 0;
+		}
+
+		while ($obj = $db->fetch_object($resql)) {
+			$rot = (int) $obj->rotation;
+			$ox  = (int) $obj->pos_x;
+			$oy  = (int) $obj->pos_y;
+			$ow  = ($rot === 90) ? (int) $obj->largeur  : (int) $obj->longueur;
+			$oh  = ($rot === 90) ? (int) $obj->longueur : (int) $obj->largeur;
+
+			// Axis-aligned rectangle intersection
+			if ($pos_x < $ox + $ow
+				&& $pos_x + $um_len > $ox
+				&& $pos_y < $oy + $oh
+				&& $pos_y + $um_wid > $oy
+			) {
+				$db->free($resql);
+				return (int) $obj->rowid;
+			}
+		}
+		$db->free($resql);
+		return 0;
+	}
+
+	/**
 	 * Delete object in database
 	 *
 	 * @param  User $user      User that deletes

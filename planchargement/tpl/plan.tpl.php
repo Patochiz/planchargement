@@ -172,6 +172,12 @@ if ($truck_len <= 0 || $truck_wid <= 0) {
 			$color = isset($commande_colors[$cmd_id]) ? $commande_colors[$cmd_id] : '#95a5a6';
 			$cmd_label = isset($commande_refs[$cmd_id]) ? $commande_refs[$cmd_id] : '';
 			?>
+			<?php
+			$tooltip = $um->ref_um.' - '.$ut->label.($cmd_label !== '' ? ' ('.$cmd_label.')' : '');
+			if ($is_draft) {
+				$tooltip .= "\n".$langs->trans('PlanchargementPlanRotateHint');
+			}
+			?>
 			<div class="plan-um"
 				data-um-id="<?php echo (int) $um->id; ?>"
 				data-um-len="<?php echo (int) $um_len; ?>"
@@ -181,7 +187,7 @@ if ($truck_len <= 0 || $truck_wid <= 0) {
 				data-um-pos-y="<?php echo (int) $um->pos_y; ?>"
 				<?php if ($is_draft) { ?>draggable="true"<?php } ?>
 				style="left: <?php echo $left; ?>px; top: <?php echo $top; ?>px; width: <?php echo $w; ?>px; height: <?php echo $h; ?>px; background-color: <?php echo $color; ?>;"
-				title="<?php echo dol_escape_htmltag($um->ref_um.' - '.$ut->label.($cmd_label !== '' ? ' ('.$cmd_label.')' : '')); ?>">
+				title="<?php echo dol_escape_htmltag($tooltip); ?>">
 				<span class="plan-um-ref"><?php echo dol_escape_htmltag($um->ref_um); ?></span>
 				<?php if ($cmd_label !== '') { ?>
 					<span class="plan-um-cmd"><?php echo dol_escape_htmltag($cmd_label); ?></span>
@@ -263,6 +269,12 @@ if ($truck_len <= 0 || $truck_wid <= 0) {
 			$color = isset($commande_colors[$cmd_id]) ? $commande_colors[$cmd_id] : '#95a5a6';
 			$cmd_label = isset($commande_refs[$cmd_id]) ? $commande_refs[$cmd_id] : '';
 			?>
+			<?php
+			$tile_tooltip = $um->ref_um.' - '.$ut->label;
+			if ($is_draft) {
+				$tile_tooltip .= "\n".$langs->trans('PlanchargementPlanRotateHint');
+			}
+			?>
 			<div class="plan-um-tile"
 				data-um-id="<?php echo (int) $um->id; ?>"
 				data-um-len="<?php echo (int) $um_len; ?>"
@@ -270,7 +282,7 @@ if ($truck_len <= 0 || $truck_wid <= 0) {
 				data-um-hei="<?php echo (int) $ut->hauteur; ?>"
 				<?php if ($is_draft) { ?>draggable="true"<?php } ?>
 				style="background-color: <?php echo $color; ?>;"
-				title="<?php echo dol_escape_htmltag($um->ref_um.' - '.$ut->label); ?>">
+				title="<?php echo dol_escape_htmltag($tile_tooltip); ?>">
 				<span class="plan-um-ref"><?php echo dol_escape_htmltag($um->ref_um); ?></span>
 				<span class="plan-um-dims"><?php echo (int) $um_len; ?>&times;<?php echo (int) $um_wid; ?></span>
 				<?php if ($cmd_label !== '') { ?>

@@ -329,6 +329,43 @@ function initPlanDragDrop() {
 		return Math.round(mm / snapMm) * snapMm;
 	}
 
+	// Snapshot of every other placed UM as an axis-aligned rectangle (mm).
+	// Used to detect overlap client-side while dragging. Refreshed on every
+	// dragstart so a recently moved UM stays in sync.
+	function snapshotPlacedRects(excludeFkUm) {
+		var rects = [];
+		var nodes = topView.querySelectorAll('.plan-um');
+		nodes.forEach(function (n) {
+			var id = n.getAttribute('data-um-id');
+			if (id === excludeFkUm) {
+				return;
+			}
+			rects.push({
+				x: parseInt(n.getAttribute('data-um-pos-x'), 10) || 0,
+				y: parseInt(n.getAttribute('data-um-pos-y'), 10) || 0,
+				w: parseInt(n.getAttribute('data-um-len'),   10) || 0,
+				h: parseInt(n.getAttribute('data-um-wid'),   10) || 0
+			});
+		});
+		return rects;
+	}
+
+	function rectsOverlap(ax, ay, aw, ah, b) {
+		return ax < b.x + b.w
+			&& ax + aw > b.x
+			&& ay < b.y + b.h
+			&& ay + ah > b.y;
+	}
+
+	function hasOverlap(posXmm, posYmm, lenMm, widMm, others) {
+		for (var i = 0; i < others.length; i++) {
+			if (rectsOverlap(posXmm, posYmm, lenMm, widMm, others[i])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// Attach dragstart on every draggable UM (top view + overflow tiles)
 	var umEls = document.querySelectorAll('.plan-um[draggable="true"], .plan-um-tile[draggable="true"]');
 	umEls.forEach(function (el) {
@@ -350,12 +387,14 @@ function initPlanDragDrop() {
 				grabOffsetYmm = umWid / 2;
 			}
 
+			var fkUm = el.getAttribute('data-um-id');
 			dragState = {
-				fk_um:         el.getAttribute('data-um-id'),
+				fk_um:         fkUm,
 				um_len:        umLen,
 				um_wid:        umWid,
 				grab_off_x_mm: grabOffsetXmm,
-				grab_off_y_mm: grabOffsetYmm
+				grab_off_y_mm: grabOffsetYmm,
+				others:        snapshotPlacedRects(fkUm)
 			};
 
 			e.dataTransfer.setData('text/plain', JSON.stringify(dragState));
@@ -412,9 +451,16 @@ function initPlanDragDrop() {
 		if (ghost && dragState) {
 			var pos = computeDropPosMm(e);
 			if (pos) {
+				var bad = hasOverlap(pos.pos_x, pos.pos_y, dragState.um_len, dragState.um_wid, dragState.others);
 				ghost.style.left = Math.round(pos.pos_x * scale) + 'px';
 				ghost.style.top  = Math.round(pos.pos_y * scale) + 'px';
 				ghost.style.display = 'block';
+				if (bad) {
+					ghost.classList.add('invalid');
+					e.dataTransfer.dropEffect = 'none';
+				} else {
+					ghost.classList.remove('invalid');
+				}
 			}
 		}
 	});
@@ -434,12 +480,14 @@ function initPlanDragDrop() {
 		topView.classList.remove('drop-target');
 		if (ghost) {
 			ghost.style.display = 'none';
+			ghost.classList.remove('invalid');
 		}
 
 		if (!dragState) {
 			// dataTransfer fallback (e.g. drag from outside window)
 			try {
 				dragState = JSON.parse(e.dataTransfer.getData('text/plain'));
+				dragState.others = dragState.others || [];
 			} catch (err) {
 				return;
 			}
@@ -453,6 +501,12 @@ function initPlanDragDrop() {
 			return;
 		}
 
+		// Refuse the drop client-side if the target rectangle overlaps another
+		// already placed UM (the server enforces the same rule as a safety net).
+		if (hasOverlap(pos.pos_x, pos.pos_y, dragState.um_len, dragState.um_wid, dragState.others)) {
+			return;
+		}
+
 		var params = 'fk_um=' + encodeURIComponent(dragState.fk_um) +
 			'&pos_x=' + encodeURIComponent(pos.pos_x) +
 			'&pos_y=' + encodeURIComponent(pos.pos_y);
@@ -460,6 +514,8 @@ function initPlanDragDrop() {
 		ajaxPost(planchargement_ajax_url_update_um_position, params, function (resp) {
 			if (resp && resp.success) {
 				window.location.reload();
+			} else if (resp && resp.error === 'Overlap') {
+				alert('Cette position chevauche une autre UM');
 			} else {
 				alert((resp && resp.error) || 'Error updating position');
 			}
@@ -507,4 +563,29 @@ function initPlanDragDrop() {
 			});
 		});
 	}
+
+	// Double-click on a UM (placed or in overflow) toggles its rotation 0°↔90°
+	var rotatables = document.querySelectorAll('.plan-um[draggable="true"], .plan-um-tile[draggable="true"]');
+	rotatables.forEach(function (el) {
+		el.addEventListener('dblclick', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var fkUm = el.getAttribute('data-um-id');
+			if (!fkUm) {
+				return;
+			}
+			var params = 'fk_um=' + encodeURIComponent(fkUm);
+			ajaxPost(planchargement_ajax_url_rotate_um, params, function (resp) {
+				if (resp && resp.success) {
+					window.location.reload();
+				} else if (resp && resp.error === 'Overlap') {
+					alert('Impossible de pivoter : chevauchement avec une autre UM');
+				} else if (resp && resp.error === 'WouldOverflow') {
+					alert('Impossible de pivoter : l\'UM déborderait du camion');
+				} else {
+					alert((resp && resp.error) || 'Erreur lors de la rotation');
+				}
+			});
+		});
+	});
 }

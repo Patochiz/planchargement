@@ -115,6 +115,17 @@ if ((int) $ct->largeur_utile > 0 && $pos_y + $um_wid > (int) $ct->largeur_utile)
 	$pos_y = max(0, (int) $ct->largeur_utile - $um_wid);
 }
 
+// Reject overlap with another already placed UM (stacked children excluded)
+$conflict = ChargementUm::findOverlap($db, (int) $um->fk_chargement, (int) $fk_um, (int) $pos_x, (int) $pos_y, (int) $um_len, (int) $um_wid);
+if ($conflict > 0) {
+	echo json_encode(array(
+		'success'     => false,
+		'error'       => 'Overlap',
+		'conflict_id' => $conflict,
+	));
+	exit;
+}
+
 $sql = "UPDATE ".MAIN_DB_PREFIX."planchargement_um";
 $sql .= " SET pos_x = ".((int) $pos_x).", pos_y = ".((int) $pos_y);
 $sql .= " WHERE rowid = ".((int) $fk_um);
