@@ -85,15 +85,27 @@ if (is_array($customs)) {
 $palette = array('#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#34495e');
 $commande_colors = array();
 $commande_refs = array();
+$commande_thirdparty = array();
 $i = 0;
 foreach ($object->commandes as $fk_cmd) {
 	$commande_colors[$fk_cmd] = $palette[$i % count($palette)];
 	$cmd = new Commande($db);
 	if ($cmd->fetch($fk_cmd) > 0) {
 		$commande_refs[$fk_cmd] = $cmd->ref;
+		$cmd->fetch_thirdparty();
+		$commande_thirdparty[$fk_cmd] = (empty($cmd->thirdparty) || empty($cmd->thirdparty->name)) ? '' : $cmd->thirdparty->name;
 	}
 	$i++;
 }
+// Render "REF - Tiers" with a graceful fallback when the soc is missing.
+$commande_label = function ($fk_cmd) use ($commande_refs, $commande_thirdparty) {
+	if (!isset($commande_refs[$fk_cmd])) {
+		return '';
+	}
+	$ref = $commande_refs[$fk_cmd];
+	$soc = isset($commande_thirdparty[$fk_cmd]) ? $commande_thirdparty[$fk_cmd] : '';
+	return $soc !== '' ? $ref.' - '.$soc : $ref;
+};
 
 // Dominant commande per UM (first colis)
 $um_commande = array();
@@ -539,16 +551,18 @@ $pdf->SetXY($margin, $legend_y);
 $legend_parts = array();
 foreach ($commande_refs as $fk => $ref) {
 	$rgb = $hex_to_rgb($commande_colors[$fk]);
-	$legend_parts[] = array('rgb' => $rgb, 'text' => $ref);
+	$legend_parts[] = array('rgb' => $rgb, 'text' => $commande_label($fk));
 }
+$legend_col_w  = 55;
+$legend_max_x  = $page_w - $margin - $legend_col_w;
 $lx = $margin;
 foreach ($legend_parts as $lp) {
 	$pdf->SetFillColor($lp['rgb'][0], $lp['rgb'][1], $lp['rgb'][2]);
 	$pdf->Rect($lx, $legend_y, 3, 3, 'F');
 	$pdf->SetXY($lx + 4, $legend_y - 0.5);
-	$pdf->Cell(30, 3, $lp['text'], 0, 0, 'L');
-	$lx += 4 + 30;
-	if ($lx > $page_w - $margin - 35) {
+	$pdf->Cell($legend_col_w - 4, 3, dol_trunc($lp['text'], 32), 0, 0, 'L');
+	$lx += $legend_col_w;
+	if ($lx > $legend_max_x) {
 		break;
 	}
 }
@@ -581,7 +595,7 @@ foreach ($object->lines as $um) {
 	$u_wid = ($rot === 90) ? (int) $ut->longueur : (int) $ut->largeur;
 
 	$cmd_id    = isset($um_commande[$um->id]) ? $um_commande[$um->id] : 0;
-	$cmd_label = isset($commande_refs[$cmd_id]) ? $commande_refs[$cmd_id] : '';
+	$cmd_label = $commande_label($cmd_id);
 	$color_hex = isset($commande_colors[$cmd_id]) ? $commande_colors[$cmd_id] : '#95a5a6';
 	$rgb       = $hex_to_rgb($color_hex);
 
@@ -629,12 +643,13 @@ foreach ($object->lines as $um) {
 			$left .= '   (gerb. '.$parent_um->ref_um.')';
 		}
 	}
+	$right_w = 80;
 	$pdf->SetXY($col_x + 6, $header_y + 0.8);
-	$pdf->Cell($col_w - 50, 5, $left, 0, 0, 'L');
-	// right text: commande ref
+	$pdf->Cell($col_w - $right_w - 8, 5, $left, 0, 0, 'L');
+	// right text: commande ref + tiers
 	$pdf->SetFont('helvetica', '', 8);
-	$pdf->SetXY($col_x + $col_w - 44, $header_y + 0.8);
-	$pdf->Cell(42, 5, $cmd_label, 0, 0, 'R');
+	$pdf->SetXY($col_x + $col_w - $right_w - 2, $header_y + 0.8);
+	$pdf->Cell($right_w, 5, dol_trunc($cmd_label, 48), 0, 0, 'R');
 	$pdf->SetY($header_y + 6);
 
 	// --- Colis / items list ---
@@ -648,7 +663,7 @@ foreach ($object->lines as $um) {
 			$cp        = isset($packages_cache[(int) $c->fk_package]) ? $packages_cache[(int) $c->fk_package] : null;
 			$c_items   = $cp ? $cp->items : array();
 			$c_section = $pkg_section($cp);
-			$c_cmd     = isset($commande_refs[(int) $c->fk_commande]) ? $commande_refs[(int) $c->fk_commande] : '';
+			$c_cmd     = $commande_label((int) $c->fk_commande);
 
 			// Colis line
 			$pdf->SetFont('helvetica', 'B', 8);
