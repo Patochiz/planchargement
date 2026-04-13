@@ -293,19 +293,19 @@ $mpl_avg_mm   = ($mpl_upper_mm + $mpl_lower_mm) / 2;
 // ====================================================================
 // PDF GENERATION
 // ====================================================================
-$pdf = pdf_getInstance(array(297, 210), 'mm', 'A4');
+$pdf = pdf_getInstance(array(210, 297), 'mm', 'A4');
 $pdf->SetCreator('Dolibarr '.DOL_VERSION);
 $pdf->SetAuthor(empty($mysoc->name) ? '' : $mysoc->name);
 $pdf->SetTitle($langs->trans('PlanchargementChargement').' '.$object->ref);
 $pdf->SetAutoPageBreak(0, 0);
-$pdf->AddPage('L', 'A4');
+$pdf->AddPage('P', 'A4');
 $pdf->SetMargins(10, 10, 10);
 
-$page_w = 297;
-$page_h = 210;
+$page_w = 210;
+$page_h = 297;
 $margin = 10;
-$usable_w = $page_w - 2 * $margin;   // 277 mm
-$usable_h = $page_h - 2 * $margin;   // 190 mm
+$usable_w = $page_w - 2 * $margin;   // 190 mm
+$usable_h = $page_h - 2 * $margin;   // 277 mm
 
 // ---- Header block ----
 $pdf->SetFont('helvetica', 'B', 14);
@@ -559,7 +559,7 @@ $pdf->Cell(30, 3, 'Page '.$pdf->PageNo().'/'.$pdf->getAliasNbPages(), 0, 0, 'R')
 // PAGE 2+ : UM inventory (each UM with its colis and items)
 // ====================================================================
 $pdf->SetAutoPageBreak(1, $margin);
-$pdf->AddPage('L', 'A4');
+$pdf->AddPage('P', 'A4');
 
 $pdf->SetFont('helvetica', 'B', 13);
 $pdf->SetTextColor(44, 62, 80);
@@ -601,7 +601,7 @@ foreach ($object->lines as $um) {
 	}
 	$est_h += 3; // bottom gap
 	if ($pdf->GetY() + min($est_h, 60) > ($page_h - $margin)) {
-		$pdf->AddPage('L', 'A4');
+		$pdf->AddPage('P', 'A4');
 		$pdf->SetY($margin);
 	}
 
