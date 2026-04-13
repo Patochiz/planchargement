@@ -151,3 +151,5 @@ PlanchargementPlanMplUpper=upper
 PlanchargementPlanMplLower=lower
 PlanchargementPlanMplHint=Linear floor meters consumed: average of the lengths occupied on each half of the truck (to declare to the carrier)
 PlanchargementPlanExportPdf=Export as PDF
+PlanchargementPlanUmContents=UM contents
+PlanchargementPlanNoColis=No assigned packages

@@ -23,6 +23,7 @@ dol_include_once('/planchargement/class/chargement.class.php');
 dol_include_once('/planchargement/class/chargementum.class.php');
 dol_include_once('/planchargement/class/camiontype.class.php');
 dol_include_once('/planchargement/class/umtype.class.php');
+dol_include_once('/colisage/class/colisagepackage.class.php');
 
 $langs->loadLangs(array('planchargement@planchargement', 'main', 'orders'));
 
@@ -101,6 +102,114 @@ foreach ($object->lines as $um) {
 		$um_commande[$um->id] = (int) $um->colis[0]->fk_commande;
 	}
 }
+
+// ------------------------------------------------------------------
+// Fetch colisage packages + commande lines so we can print each UM's
+// content (colis, section titles, product refs). Same logic as the
+// composition tab — kept inline to avoid coupling to the template.
+// ------------------------------------------------------------------
+$all_pkg_ids = array();
+foreach ($object->lines as $um) {
+	if (!empty($um->colis)) {
+		foreach ($um->colis as $c) {
+			$all_pkg_ids[] = (int) $c->fk_package;
+		}
+	}
+}
+$all_pkg_ids = array_unique($all_pkg_ids);
+$packages_cache = array();
+foreach ($all_pkg_ids as $pid) {
+	$cp = new ColisagePackage($db);
+	if ($cp->fetch((int) $pid) > 0) {
+		$packages_cache[(int) $pid] = $cp;
+	}
+}
+
+// Build section title + product label maps from the commande lines.
+// Matches the colisage module logic: a line with fk_product = service
+// id 361 and product_type = 1 marks a section; items picked from
+// ref_chantier extrafield first, then desc.
+$COLISAGE_TITRE_SERVICE_ID = (int) getDolGlobalInt('PLANCHARGEMENT_COLISAGE_TITRE_SERVICE_ID', 361);
+$section_by_commandedet = array();
+$linedet_by_id = array();
+foreach ($object->commandes as $fk_cmd) {
+	$cmd = new Commande($db);
+	if ($cmd->fetch($fk_cmd) <= 0) {
+		continue;
+	}
+	if (empty($cmd->lines)) {
+		$cmd->fetch_lines();
+	}
+	$current_title = '';
+	if (!empty($cmd->lines)) {
+		foreach ($cmd->lines as $line) {
+			$is_section = ((int) $line->fk_product === $COLISAGE_TITRE_SERVICE_ID
+				&& (int) $line->product_type === 1);
+			if ($is_section) {
+				$ref_chantier = '';
+				if (!empty($line->array_options['options_ref_chantier'])) {
+					$ref_chantier = $line->array_options['options_ref_chantier'];
+				}
+				if ($ref_chantier !== '') {
+					$current_title = $ref_chantier;
+				} elseif (!empty($line->desc)) {
+					$current_title = $line->desc;
+				} elseif (!empty($line->description)) {
+					$current_title = $line->description;
+				} else {
+					$current_title = (string) $line->label;
+				}
+				continue;
+			}
+			$rowid = (int) $line->rowid;
+			$section_by_commandedet[$rowid] = $current_title;
+			$linedet_by_id[$rowid] = array(
+				'product_ref' => isset($line->product_ref) ? $line->product_ref : (isset($line->ref) ? $line->ref : ''),
+				'desc'        => isset($line->desc) ? $line->desc : '',
+				'label'       => isset($line->product_label) ? $line->product_label : '',
+			);
+		}
+	}
+}
+
+// Helper: resolve an item label from a ColisageItem (custom name > product
+// ref > desc > label). Truncates long descriptions for table layout.
+$item_label = function ($it) use ($linedet_by_id) {
+	if (!empty($it->custom_name)) {
+		return $it->custom_name;
+	}
+	$cd = isset($it->fk_commandedet) ? (int) $it->fk_commandedet : 0;
+	if ($cd > 0 && isset($linedet_by_id[$cd])) {
+		$l = $linedet_by_id[$cd];
+		if (!empty($l['product_ref'])) {
+			return $l['product_ref'];
+		}
+		if (!empty($l['desc'])) {
+			return dol_trunc(strip_tags($l['desc']), 40);
+		}
+		if (!empty($l['label'])) {
+			return dol_trunc(strip_tags($l['label']), 40);
+		}
+	}
+	if (!empty($it->description)) {
+		return dol_trunc(strip_tags($it->description), 40);
+	}
+	return '?';
+};
+
+// Helper: first non-empty section title across a package's items.
+$pkg_section = function ($pkg) use ($section_by_commandedet) {
+	if (empty($pkg) || empty($pkg->items)) {
+		return '';
+	}
+	foreach ($pkg->items as $it) {
+		$cd = isset($it->fk_commandedet) ? (int) $it->fk_commandedet : 0;
+		if ($cd > 0 && isset($section_by_commandedet[$cd]) && $section_by_commandedet[$cd] !== '') {
+			return $section_by_commandedet[$cd];
+		}
+	}
+	return '';
+};
 
 // rowid -> UM lookup (for parent height in side view)
 $um_by_id = array();
@@ -444,7 +553,141 @@ foreach ($legend_parts as $lp) {
 	}
 }
 $pdf->SetXY($page_w - $margin - 30, $legend_y);
-$pdf->Cell(30, 3, 'Page 1/1', 0, 0, 'R');
+$pdf->Cell(30, 3, 'Page '.$pdf->PageNo().'/'.$pdf->getAliasNbPages(), 0, 0, 'R');
+
+// ====================================================================
+// PAGE 2+ : UM inventory (each UM with its colis and items)
+// ====================================================================
+$pdf->SetAutoPageBreak(1, $margin);
+$pdf->AddPage('L', 'A4');
+
+$pdf->SetFont('helvetica', 'B', 13);
+$pdf->SetTextColor(44, 62, 80);
+$pdf->SetXY($margin, $margin);
+$pdf->Cell($usable_w, 7, $langs->trans('PlanchargementPlanUmContents').' - '.$object->ref, 0, 1, 'L');
+
+// Column layout (single column, full width) — UM blocks flow top-down
+$col_x = $margin;
+$col_w = $usable_w;
+$pdf->SetY($margin + 9);
+
+foreach ($object->lines as $um) {
+	$ut = isset($umtype_map[$um->fk_um_type]) ? $umtype_map[$um->fk_um_type] : null;
+	if (!$ut) {
+		continue;
+	}
+	$rot   = (int) $um->rotation;
+	$u_len = ($rot === 90) ? (int) $ut->largeur  : (int) $ut->longueur;
+	$u_wid = ($rot === 90) ? (int) $ut->longueur : (int) $ut->largeur;
+
+	$cmd_id    = isset($um_commande[$um->id]) ? $um_commande[$um->id] : 0;
+	$cmd_label = isset($commande_refs[$cmd_id]) ? $commande_refs[$cmd_id] : '';
+	$color_hex = isset($commande_colors[$cmd_id]) ? $commande_colors[$cmd_id] : '#95a5a6';
+	$rgb       = $hex_to_rgb($color_hex);
+
+	// Estimate block height to decide whether we need a page break before
+	// the header (MultiCell handles inner auto-break for long contents).
+	$est_h = 7; // header
+	if (!empty($um->colis)) {
+		foreach ($um->colis as $c) {
+			$est_h += 5;
+			$cp = isset($packages_cache[(int) $c->fk_package]) ? $packages_cache[(int) $c->fk_package] : null;
+			if ($cp && !empty($cp->items)) {
+				$est_h += 4 * count($cp->items);
+			}
+		}
+	} else {
+		$est_h += 5;
+	}
+	$est_h += 3; // bottom gap
+	if ($pdf->GetY() + min($est_h, 60) > ($page_h - $margin)) {
+		$pdf->AddPage('L', 'A4');
+		$pdf->SetY($margin);
+	}
+
+	// --- UM header row: colored dot, ref, type, dimensions, weight, commande ---
+	$header_y = $pdf->GetY();
+	$pdf->SetFillColor(236, 240, 241);
+	$pdf->SetDrawColor(189, 195, 199);
+	$pdf->SetLineWidth(0.2);
+	$pdf->Rect($col_x, $header_y, $col_w, 6, 'DF');
+	// color pill
+	$pdf->SetFillColor($rgb[0], $rgb[1], $rgb[2]);
+	$pdf->Rect($col_x + 1.5, $header_y + 1.5, 3, 3, 'F');
+	// left text: ref + type + dims
+	$pdf->SetFont('helvetica', 'B', 9);
+	$pdf->SetTextColor(44, 62, 80);
+	$left = $um->ref_um.'   '.(empty($ut->label) ? '' : $ut->label)
+		.'   '.(int) $u_len.' x '.(int) $u_wid.' x '.(int) $ut->hauteur.' mm';
+	$weight_um = ($um->poids !== null) ? (float) $um->poids : 0;
+	if ($weight_um > 0) {
+		$left .= '   '.price2num($weight_um, 'MT').' kg';
+	}
+	if (!empty($um->fk_um_parent)) {
+		$parent_um = isset($um_by_id[(int) $um->fk_um_parent]) ? $um_by_id[(int) $um->fk_um_parent] : null;
+		if ($parent_um) {
+			$left .= '   (gerb. '.$parent_um->ref_um.')';
+		}
+	}
+	$pdf->SetXY($col_x + 6, $header_y + 0.8);
+	$pdf->Cell($col_w - 50, 5, $left, 0, 0, 'L');
+	// right text: commande ref
+	$pdf->SetFont('helvetica', '', 8);
+	$pdf->SetXY($col_x + $col_w - 44, $header_y + 0.8);
+	$pdf->Cell(42, 5, $cmd_label, 0, 0, 'R');
+	$pdf->SetY($header_y + 6);
+
+	// --- Colis / items list ---
+	if (empty($um->colis)) {
+		$pdf->SetFont('helvetica', 'I', 8);
+		$pdf->SetTextColor(127, 140, 141);
+		$pdf->SetX($col_x + 3);
+		$pdf->Cell($col_w - 3, 5, '- '.$langs->trans('PlanchargementPlanNoColis'), 0, 1, 'L');
+	} else {
+		foreach ($um->colis as $c) {
+			$cp        = isset($packages_cache[(int) $c->fk_package]) ? $packages_cache[(int) $c->fk_package] : null;
+			$c_items   = $cp ? $cp->items : array();
+			$c_section = $pkg_section($cp);
+			$c_cmd     = isset($commande_refs[(int) $c->fk_commande]) ? $commande_refs[(int) $c->fk_commande] : '';
+
+			// Colis line
+			$pdf->SetFont('helvetica', 'B', 8);
+			$pdf->SetTextColor(44, 62, 80);
+			$pdf->SetX($col_x + 3);
+			$line = '- '.$langs->trans('PlanchargementColis').' #'.(int) $c->fk_package.'  x'.(int) $c->quantity;
+			if ($c_section !== '') {
+				$line .= '   '.dol_trunc($c_section, 60);
+			}
+			if ($c_cmd !== '' && $c_cmd !== $cmd_label) {
+				$line .= '   ['.$c_cmd.']';
+			}
+			$pdf->Cell($col_w - 3, 4.5, $line, 0, 1, 'L');
+
+			// Items lines (indented)
+			if (!empty($c_items)) {
+				$pdf->SetFont('helvetica', '', 8);
+				$pdf->SetTextColor(80, 80, 80);
+				foreach ($c_items as $it) {
+					$label = $item_label($it);
+					$dims  = '';
+					if (!empty($it->longueur) && !empty($it->largeur)) {
+						$dims = '   '.(int) $it->longueur.' x '.(int) $it->largeur;
+						if (!empty($it->hauteur)) {
+							$dims .= ' x '.(int) $it->hauteur;
+						}
+						$dims .= ' mm';
+					}
+					$pdf->SetX($col_x + 8);
+					$pdf->Cell($col_w - 8, 3.8,
+						dol_trunc($label, 60).'   x'.(int) $it->quantity.$dims,
+						0, 1, 'L');
+				}
+			}
+		}
+	}
+	// Spacer between UMs
+	$pdf->Ln(2);
+}
 
 // Output
 $filename = 'plan_'.dol_sanitizeFileName($object->ref).'.pdf';

@@ -151,3 +151,5 @@ PlanchargementPlanMplUpper=haut
 PlanchargementPlanMplLower=bas
 PlanchargementPlanMplHint=Mètres plancher linéaires consommés : moyenne des longueurs occupées sur chaque moitié du camion (à déclarer à l'affréteur)
 PlanchargementPlanExportPdf=Exporter en PDF
+PlanchargementPlanUmContents=Contenu des UM
+PlanchargementPlanNoColis=Aucun colis affecté
