@@ -584,6 +584,13 @@ if ($action == 'create') {
 		print 'var planchargement_readonly = '.($object->statut != Chargement::STATUS_DRAFT ? 'true' : 'false').';';
 		print '</script>';
 
+		// PDF export button
+		print '<div class="tabsAction">';
+		print '<a class="butAction" target="_blank" href="'.dol_buildpath('/planchargement/plan_pdf.php', 1).'?id='.((int) $object->id).'">';
+		print img_picto('', 'pdf').' '.$langs->trans('PlanchargementPlanExportPdf');
+		print '</a>';
+		print '</div>';
+
 		include dol_buildpath('/planchargement/tpl/plan.tpl.php', 0);
 
 	// ============ INFO TAB ============
