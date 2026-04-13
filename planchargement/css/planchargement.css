@@ -323,6 +323,38 @@
 .plan-statsbar .stat:last-child {
 	border-right: none;
 }
+.plan-statsbar .stat-mpl strong {
+	color: #2c3e50;
+	font-size: 1.1em;
+}
+.plan-statsbar .stat-mpl .mpl-detail {
+	color: #7f8c8d;
+	font-size: 0.9em;
+}
+
+/* Ruler (meter labels) above the top view */
+.plan-ruler {
+	position: relative;
+	height: 14px;
+	margin-top: 2px;
+	margin-bottom: 0;
+}
+.plan-ruler-label {
+	position: absolute;
+	top: 0;
+	font-size: 0.7em;
+	color: #7f8c8d;
+	transform: translateX(-50%);
+	white-space: nowrap;
+	line-height: 14px;
+	font-style: italic;
+}
+.plan-ruler-label.plan-ruler-label-start {
+	transform: translateX(0);
+}
+.plan-ruler-label.plan-ruler-label-end {
+	transform: translateX(-100%);
+}
 
 /* Section labels */
 .plan-view-label {

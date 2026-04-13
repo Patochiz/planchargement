@@ -146,3 +146,7 @@ PlanchargementPlanRotateHint=Double-click to rotate
 PlanchargementPlanStackHint=Drop a UM on top to stack it
 PlanchargementPlanOverlap=This position overlaps another UM
 PlanchargementPlanCannotRotate=Cannot rotate (overlap or overflow)
+PlanchargementPlanMpl=LFM
+PlanchargementPlanMplUpper=upper
+PlanchargementPlanMplLower=lower
+PlanchargementPlanMplHint=Linear floor meters consumed: average of the lengths occupied on each half of the truck (to declare to the carrier)

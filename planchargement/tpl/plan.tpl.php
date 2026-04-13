@@ -186,6 +186,73 @@ foreach ($object->lines as $um) {
 		$side_renderables_lower[] = $entry;
 	}
 }
+
+// ------------------------------------------------------------------
+// Linear floor meters ("MPL" — Mètres Plancher Linéaires) consumed on
+// each lane of the truck, plus the average which is what you usually
+// invoice to an affréteur. A UM contributes its [pos_x, pos_x+u_len]
+// interval to the upper lane if it intersects [0, wid/2], and to the
+// lower lane if it intersects [wid/2, wid] — a UM that straddles the
+// split counts on both lanes. Stacked children are skipped because
+// they share their parent's X interval.
+// ------------------------------------------------------------------
+$intervals_upper = array();
+$intervals_lower = array();
+foreach ($object->lines as $um) {
+	$ut = isset($umtype_map[$um->fk_um_type]) ? $umtype_map[$um->fk_um_type] : null;
+	if (!$ut) {
+		continue;
+	}
+	$is_placed = ($um->pos_x !== null && $um->pos_x !== '' && $um->pos_y !== null && $um->pos_y !== '');
+	if (!$is_placed) {
+		continue;
+	}
+	if (!empty($um->fk_um_parent)) {
+		continue;
+	}
+	$rot = (int) $um->rotation;
+	$u_len = ($rot === 90) ? (int) $ut->largeur  : (int) $ut->longueur;
+	$u_wid = ($rot === 90) ? (int) $ut->longueur : (int) $ut->largeur;
+	$x1 = (int) $um->pos_x;
+	$x2 = $x1 + $u_len;
+	$y1 = (int) $um->pos_y;
+	$y2 = $y1 + $u_wid;
+	$interval = array($x1, $x2);
+	if ($y1 < $side_half_limit) {
+		$intervals_upper[] = $interval;
+	}
+	if ($y2 > $side_half_limit) {
+		$intervals_lower[] = $interval;
+	}
+}
+$planchargement_union_length = function ($intervals) {
+	if (empty($intervals)) {
+		return 0;
+	}
+	usort($intervals, function ($a, $b) {
+		return $a[0] - $b[0];
+	});
+	$total = 0;
+	$cs = $intervals[0][0];
+	$ce = $intervals[0][1];
+	$n = count($intervals);
+	for ($i = 1; $i < $n; $i++) {
+		if ($intervals[$i][0] <= $ce) {
+			if ($intervals[$i][1] > $ce) {
+				$ce = $intervals[$i][1];
+			}
+		} else {
+			$total += $ce - $cs;
+			$cs = $intervals[$i][0];
+			$ce = $intervals[$i][1];
+		}
+	}
+	$total += $ce - $cs;
+	return $total;
+};
+$mpl_upper_mm = $planchargement_union_length($intervals_upper);
+$mpl_lower_mm = $planchargement_union_length($intervals_lower);
+$mpl_avg_mm   = ($mpl_upper_mm + $mpl_lower_mm) / 2;
 ?>
 
 <div class="planchargement-plan-wrapper">
@@ -205,6 +272,16 @@ foreach ($object->lines as $um) {
 		<span class="stat">
 			<?php echo $langs->trans('PlanchargementPlanTruckDims'); ?>:
 			<strong><?php echo (int) $truck_len; ?> &times; <?php echo (int) $truck_wid; ?> &times; <?php echo (int) $truck_hei; ?> mm</strong>
+		</span>
+		<span class="stat stat-mpl" title="<?php echo dol_escape_htmltag($langs->trans('PlanchargementPlanMplHint')); ?>">
+			<?php echo $langs->trans('PlanchargementPlanMpl'); ?>:
+			<strong><?php echo number_format($mpl_avg_mm / 1000, 2); ?> m</strong>
+			<span class="mpl-detail">
+				(<?php echo $langs->trans('PlanchargementPlanMplUpper'); ?>
+				<?php echo number_format($mpl_upper_mm / 1000, 2); ?> m
+				/ <?php echo $langs->trans('PlanchargementPlanMplLower'); ?>
+				<?php echo number_format($mpl_lower_mm / 1000, 2); ?> m)
+			</span>
 		</span>
 	</div>
 
@@ -227,6 +304,29 @@ foreach ($object->lines as $um) {
 	<div class="plan-view-label"><?php echo $langs->trans('PlanchargementPlanTopView'); ?></div>
 	<div class="plan-axis-label plan-axis-front"><?php echo $langs->trans('PlanchargementPlanTablier'); ?></div>
 	<div class="plan-axis-label plan-axis-back"><?php echo $langs->trans('PlanchargementPlanPorte'); ?></div>
+
+	<!-- Ruler: one label per meter of truck length, aligned with the 1 m grid -->
+	<div class="plan-ruler" style="width: <?php echo $top_w_px; ?>px;">
+		<?php
+		$nb_m_full = (int) floor($truck_len / 1000);
+		for ($m = 0; $m <= $nb_m_full; $m++) {
+			$rleft = (int) round($m * 1000 * $scale);
+			$rcls  = 'plan-ruler-label';
+			if ($m === 0) {
+				$rcls .= ' plan-ruler-label-start';
+			}
+			?>
+			<span class="<?php echo $rcls; ?>" style="left: <?php echo $rleft; ?>px;"><?php echo $m; ?> m</span>
+			<?php
+		}
+		if (($truck_len % 1000) !== 0) {
+			$rem_m = rtrim(rtrim(number_format($truck_len / 1000, 2, '.', ''), '0'), '.');
+			?>
+			<span class="plan-ruler-label plan-ruler-label-end" style="left: <?php echo $top_w_px; ?>px;"><?php echo $rem_m; ?> m</span>
+			<?php
+		}
+		?>
+	</div>
 
 	<div class="plan-truck-top<?php echo $is_draft ? ' plan-editable' : ''; ?>"
 		id="plan-truck-top"

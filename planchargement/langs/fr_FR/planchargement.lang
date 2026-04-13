@@ -146,3 +146,7 @@ PlanchargementPlanRotateHint=Double-clic pour pivoter
 PlanchargementPlanStackHint=Déposer une UM dessus pour la gerber
 PlanchargementPlanOverlap=Cette position chevauche une autre UM
 PlanchargementPlanCannotRotate=Impossible de pivoter (chevauchement ou débordement)
+PlanchargementPlanMpl=MPL
+PlanchargementPlanMplUpper=haut
+PlanchargementPlanMplLower=bas
+PlanchargementPlanMplHint=Mètres plancher linéaires consommés : moyenne des longueurs occupées sur chaque moitié du camion (à déclarer à l'affréteur)
