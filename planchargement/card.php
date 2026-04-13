@@ -578,6 +578,8 @@ if ($action == 'create') {
 		// Pass JS config variables
 		print '<script>';
 		print 'var planchargement_ajax_url_update_um_position = "'.dol_buildpath('/planchargement/ajax/update_um_position.php', 1).'";';
+		print 'var planchargement_ajax_url_rotate_um = "'.dol_buildpath('/planchargement/ajax/rotate_um.php', 1).'";';
+		print 'var planchargement_ajax_url_stack_um = "'.dol_buildpath('/planchargement/ajax/stack_um.php', 1).'";';
 		print 'var planchargement_chargement_id = '.$object->id.';';
 		print 'var planchargement_readonly = '.($object->statut != Chargement::STATUS_DRAFT ? 'true' : 'false').';';
 		print '</script>';

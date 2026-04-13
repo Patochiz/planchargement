@@ -323,6 +323,38 @@
 .plan-statsbar .stat:last-child {
 	border-right: none;
 }
+.plan-statsbar .stat-mpl strong {
+	color: #2c3e50;
+	font-size: 1.1em;
+}
+.plan-statsbar .stat-mpl .mpl-detail {
+	color: #7f8c8d;
+	font-size: 0.9em;
+}
+
+/* Ruler (meter labels) above the top view */
+.plan-ruler {
+	position: relative;
+	height: 14px;
+	margin-top: 2px;
+	margin-bottom: 0;
+}
+.plan-ruler-label {
+	position: absolute;
+	top: 0;
+	font-size: 0.7em;
+	color: #7f8c8d;
+	transform: translateX(-50%);
+	white-space: nowrap;
+	line-height: 14px;
+	font-style: italic;
+}
+.plan-ruler-label.plan-ruler-label-start {
+	transform: translateX(0);
+}
+.plan-ruler-label.plan-ruler-label-end {
+	transform: translateX(-100%);
+}
 
 /* Section labels */
 .plan-view-label {
@@ -365,6 +397,66 @@
 	display: none;
 	z-index: 20;
 	box-sizing: border-box;
+}
+.plan-drop-ghost.invalid {
+	border-color: #c0392b;
+	background: rgba(192, 57, 43, 0.22);
+}
+.plan-drop-ghost.stacking {
+	border-color: #8e44ad;
+	background: rgba(142, 68, 173, 0.28);
+}
+
+/* Visual highlight on a placed UM when it is a valid stacking drop target */
+.plan-um.stacking-target {
+	box-shadow: 0 0 0 3px #8e44ad, inset 0 0 0 2px rgba(255, 255, 255, 0.7);
+	z-index: 6;
+}
+
+/* Stacked children shown as compact chips inside their parent's top-view
+   rectangle — each is individually draggable (drag to overflow to unstack,
+   drag onto the grid to unstack + place independently). */
+.plan-um-stack-list {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	max-width: 55%;
+	pointer-events: none;
+}
+.plan-um-stack-chip {
+	pointer-events: auto;
+	background: rgba(255, 255, 255, 0.25);
+	border: 1px solid rgba(255, 255, 255, 0.75);
+	color: #fff;
+	padding: 0 4px;
+	font-size: 0.68em;
+	line-height: 1.3;
+	border-radius: 2px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	cursor: grab;
+	user-select: none;
+}
+.plan-um-stack-chip:active {
+	cursor: grabbing;
+}
+.plan-um.has-stack {
+	/* Subtle hatched overlay to signal the UM has stacked children */
+	background-image: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.12) 25%,
+		transparent 25%,
+		transparent 50%,
+		rgba(255, 255, 255, 0.12) 50%,
+		rgba(255, 255, 255, 0.12) 75%,
+		transparent 75%,
+		transparent
+	);
+	background-size: 12px 12px;
 }
 .plan-truck-top.plan-editable {
 	cursor: crosshair;

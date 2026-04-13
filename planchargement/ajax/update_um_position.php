@@ -72,8 +72,9 @@ if ($chg->statut != Chargement::STATUS_DRAFT) {
 }
 
 if ($unplace) {
-	// Move UM back to the overflow zone
-	$sql = "UPDATE ".MAIN_DB_PREFIX."planchargement_um SET pos_x = NULL, pos_y = NULL";
+	// Move UM back to the overflow zone. Also detach any parent link so a
+	// formerly stacked child becomes a fully independent unplaced UM.
+	$sql = "UPDATE ".MAIN_DB_PREFIX."planchargement_um SET pos_x = NULL, pos_y = NULL, fk_um_parent = NULL";
 	$sql .= " WHERE rowid = ".((int) $fk_um);
 	if (!$db->query($sql)) {
 		echo json_encode(array('success' => false, 'error' => $db->lasterror()));
@@ -115,14 +116,34 @@ if ((int) $ct->largeur_utile > 0 && $pos_y + $um_wid > (int) $ct->largeur_utile)
 	$pos_y = max(0, (int) $ct->largeur_utile - $um_wid);
 }
 
+// Reject overlap with another already placed UM (stacked children excluded)
+$conflict = ChargementUm::findOverlap($db, (int) $um->fk_chargement, (int) $fk_um, (int) $pos_x, (int) $pos_y, (int) $um_len, (int) $um_wid);
+if ($conflict > 0) {
+	echo json_encode(array(
+		'success'     => false,
+		'error'       => 'Overlap',
+		'conflict_id' => $conflict,
+	));
+	exit;
+}
+
+// Placing / moving a UM independently unstacks it from any previous parent.
+// Re-stacking goes through stack_um.php.
 $sql = "UPDATE ".MAIN_DB_PREFIX."planchargement_um";
-$sql .= " SET pos_x = ".((int) $pos_x).", pos_y = ".((int) $pos_y);
+$sql .= " SET pos_x = ".((int) $pos_x).", pos_y = ".((int) $pos_y).", fk_um_parent = NULL";
 $sql .= " WHERE rowid = ".((int) $fk_um);
 
 if (!$db->query($sql)) {
 	echo json_encode(array('success' => false, 'error' => $db->lasterror()));
 	exit;
 }
+
+// Cascade the new position to any stacked child so they stay aligned with
+// their parent in the top / side views.
+$sql_children = "UPDATE ".MAIN_DB_PREFIX."planchargement_um";
+$sql_children .= " SET pos_x = ".((int) $pos_x).", pos_y = ".((int) $pos_y);
+$sql_children .= " WHERE fk_um_parent = ".((int) $fk_um);
+$db->query($sql_children);
 
 echo json_encode(array(
 	'success' => true,
