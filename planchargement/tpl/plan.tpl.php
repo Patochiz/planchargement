@@ -253,6 +253,39 @@ $planchargement_union_length = function ($intervals) {
 $mpl_upper_mm = $planchargement_union_length($intervals_upper);
 $mpl_lower_mm = $planchargement_union_length($intervals_lower);
 $mpl_avg_mm   = ($mpl_upper_mm + $mpl_lower_mm) / 2;
+
+// ------------------------------------------------------------------
+// Rough tractor schematics. Drawn to the left of each truck view so
+// the reader can tell the trailer's orientation (front = tractor side,
+// rear = door side). Inline SVG, viewBox 240×100, ratio preserved,
+// right-aligned so the tractor's rear/hitch touches the trailer.
+// ------------------------------------------------------------------
+$tractor_top_svg = '<svg viewBox="0 0 240 100" preserveAspectRatio="xMaxYMid meet" width="100%" height="100%" aria-hidden="true">'
+	.'<rect x="20" y="35" width="210" height="30" fill="#95a5a6" stroke="#2c3e50" stroke-width="1.5"/>'
+	.'<rect x="20" y="10" width="75" height="80" fill="#34495e" stroke="#2c3e50" stroke-width="1.5"/>'
+	.'<line x1="30" y1="20" x2="90" y2="20" stroke="#bdc3c7" stroke-width="1.5"/>'
+	.'<line x1="30" y1="80" x2="90" y2="80" stroke="#bdc3c7" stroke-width="1.5"/>'
+	.'<rect x="35" y="0" width="18" height="14" fill="#2c3e50"/>'
+	.'<rect x="35" y="86" width="18" height="14" fill="#2c3e50"/>'
+	.'<rect x="140" y="0" width="18" height="14" fill="#2c3e50"/>'
+	.'<rect x="140" y="86" width="18" height="14" fill="#2c3e50"/>'
+	.'<rect x="165" y="0" width="18" height="14" fill="#2c3e50"/>'
+	.'<rect x="165" y="86" width="18" height="14" fill="#2c3e50"/>'
+	.'<circle cx="205" cy="50" r="8" fill="#7f8c8d" stroke="#2c3e50" stroke-width="1.5"/>'
+	.'</svg>';
+
+$tractor_side_svg = '<svg viewBox="0 0 240 100" preserveAspectRatio="xMaxYMax meet" width="100%" height="100%" aria-hidden="true">'
+	.'<rect x="40" y="62" width="190" height="12" fill="#95a5a6" stroke="#2c3e50" stroke-width="1.5"/>'
+	.'<polygon points="5,75 5,45 50,45 60,22 105,22 105,75" fill="#34495e" stroke="#2c3e50" stroke-width="1.5"/>'
+	.'<line x1="52" y1="45" x2="60" y2="25" stroke="#bdc3c7" stroke-width="1.5"/>'
+	.'<circle cx="30" cy="82" r="13" fill="#2c3e50"/>'
+	.'<circle cx="30" cy="82" r="5" fill="#7f8c8d"/>'
+	.'<circle cx="170" cy="82" r="13" fill="#2c3e50"/>'
+	.'<circle cx="170" cy="82" r="5" fill="#7f8c8d"/>'
+	.'<circle cx="200" cy="82" r="13" fill="#2c3e50"/>'
+	.'<circle cx="200" cy="82" r="5" fill="#7f8c8d"/>'
+	.'<line x1="0" y1="95" x2="240" y2="95" stroke="#7f8c8d" stroke-width="1"/>'
+	.'</svg>';
 ?>
 
 <div class="planchargement-plan-wrapper">
@@ -287,20 +320,24 @@ $mpl_avg_mm   = ($mpl_upper_mm + $mpl_lower_mm) / 2;
 
 	<!-- UPPER SIDE VIEW (UMs in the upper half of the top view) -->
 	<?php if ($truck_hei > 0) { ?>
-	<div class="plan-view-label"><?php echo $langs->trans('PlanchargementPlanSideViewUpper'); ?></div>
-	<div class="plan-truck-side"
-		style="width: <?php echo $top_w_px; ?>px; height: <?php echo $side_h_px; ?>px; <?php echo $grid_bg; ?>">
-		<?php foreach ($side_renderables_upper as $r) { ?>
-			<div class="plan-um-side"
-				style="left: <?php echo $r['left']; ?>px; bottom: <?php echo $r['bottom']; ?>px; width: <?php echo $r['w']; ?>px; height: <?php echo $r['h']; ?>px; background-color: <?php echo $r['color']; ?>;"
-				title="<?php echo dol_escape_htmltag($r['um']->ref_um.' - H '.(int) $r['ut']->hauteur.' mm'); ?>">
-				<span class="plan-um-ref"><?php echo dol_escape_htmltag($r['um']->ref_um); ?></span>
-			</div>
-		<?php } ?>
+	<div class="plan-view-block">
+		<div class="plan-view-label"><?php echo $langs->trans('PlanchargementPlanSideViewUpper'); ?></div>
+		<div class="plan-truck-side"
+			style="width: <?php echo $top_w_px; ?>px; height: <?php echo $side_h_px; ?>px; <?php echo $grid_bg; ?>">
+			<?php foreach ($side_renderables_upper as $r) { ?>
+				<div class="plan-um-side"
+					style="left: <?php echo $r['left']; ?>px; bottom: <?php echo $r['bottom']; ?>px; width: <?php echo $r['w']; ?>px; height: <?php echo $r['h']; ?>px; background-color: <?php echo $r['color']; ?>;"
+					title="<?php echo dol_escape_htmltag($r['um']->ref_um.' - H '.(int) $r['ut']->hauteur.' mm'); ?>">
+					<span class="plan-um-ref"><?php echo dol_escape_htmltag($r['um']->ref_um); ?></span>
+				</div>
+			<?php } ?>
+		</div>
+		<div class="plan-tractor plan-tractor-side" style="height: <?php echo $side_h_px; ?>px;"><?php echo $tractor_side_svg; ?></div>
 	</div>
 	<?php } ?>
 
 	<!-- TOP VIEW -->
+	<div class="plan-view-block">
 	<div class="plan-view-label"><?php echo $langs->trans('PlanchargementPlanTopView'); ?></div>
 	<div class="plan-axis-label plan-axis-front"><?php echo $langs->trans('PlanchargementPlanTablier'); ?></div>
 	<div class="plan-axis-label plan-axis-back"><?php echo $langs->trans('PlanchargementPlanPorte'); ?></div>
@@ -418,19 +455,25 @@ $mpl_avg_mm   = ($mpl_upper_mm + $mpl_lower_mm) / 2;
 		}
 		?>
 	</div>
+	<div class="plan-tractor plan-tractor-top" style="height: <?php echo $top_h_px; ?>px;"><?php echo $tractor_top_svg; ?></div>
+	</div>
+	<!-- /TOP VIEW block -->
 
 	<!-- LOWER SIDE VIEW (UMs in the lower half of the top view) -->
 	<?php if ($truck_hei > 0) { ?>
-	<div class="plan-view-label"><?php echo $langs->trans('PlanchargementPlanSideViewLower'); ?></div>
-	<div class="plan-truck-side"
-		style="width: <?php echo $top_w_px; ?>px; height: <?php echo $side_h_px; ?>px; <?php echo $grid_bg; ?>">
-		<?php foreach ($side_renderables_lower as $r) { ?>
-			<div class="plan-um-side"
-				style="left: <?php echo $r['left']; ?>px; bottom: <?php echo $r['bottom']; ?>px; width: <?php echo $r['w']; ?>px; height: <?php echo $r['h']; ?>px; background-color: <?php echo $r['color']; ?>;"
-				title="<?php echo dol_escape_htmltag($r['um']->ref_um.' - H '.(int) $r['ut']->hauteur.' mm'); ?>">
-				<span class="plan-um-ref"><?php echo dol_escape_htmltag($r['um']->ref_um); ?></span>
-			</div>
-		<?php } ?>
+	<div class="plan-view-block">
+		<div class="plan-view-label"><?php echo $langs->trans('PlanchargementPlanSideViewLower'); ?></div>
+		<div class="plan-truck-side"
+			style="width: <?php echo $top_w_px; ?>px; height: <?php echo $side_h_px; ?>px; <?php echo $grid_bg; ?>">
+			<?php foreach ($side_renderables_lower as $r) { ?>
+				<div class="plan-um-side"
+					style="left: <?php echo $r['left']; ?>px; bottom: <?php echo $r['bottom']; ?>px; width: <?php echo $r['w']; ?>px; height: <?php echo $r['h']; ?>px; background-color: <?php echo $r['color']; ?>;"
+					title="<?php echo dol_escape_htmltag($r['um']->ref_um.' - H '.(int) $r['ut']->hauteur.' mm'); ?>">
+					<span class="plan-um-ref"><?php echo dol_escape_htmltag($r['um']->ref_um); ?></span>
+				</div>
+			<?php } ?>
+		</div>
+		<div class="plan-tractor plan-tractor-side" style="height: <?php echo $side_h_px; ?>px;"><?php echo $tractor_side_svg; ?></div>
 	</div>
 	<?php } ?>
 

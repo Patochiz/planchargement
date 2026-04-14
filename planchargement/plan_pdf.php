@@ -61,7 +61,7 @@ if ($ct->fetch($object->fk_camion_type) > 0) {
 }
 
 if ($truck_len <= 0 || $truck_wid <= 0) {
-	print $langs->trans('PlanchargementPlanNoTruckDims');
+	print $langs->transnoentities('PlanchargementPlanNoTruckDims');
 	exit;
 }
 
@@ -85,15 +85,27 @@ if (is_array($customs)) {
 $palette = array('#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#34495e');
 $commande_colors = array();
 $commande_refs = array();
+$commande_thirdparty = array();
 $i = 0;
 foreach ($object->commandes as $fk_cmd) {
 	$commande_colors[$fk_cmd] = $palette[$i % count($palette)];
 	$cmd = new Commande($db);
 	if ($cmd->fetch($fk_cmd) > 0) {
 		$commande_refs[$fk_cmd] = $cmd->ref;
+		$cmd->fetch_thirdparty();
+		$commande_thirdparty[$fk_cmd] = (empty($cmd->thirdparty) || empty($cmd->thirdparty->name)) ? '' : $cmd->thirdparty->name;
 	}
 	$i++;
 }
+// Render "REF - Tiers" with a graceful fallback when the soc is missing.
+$commande_label = function ($fk_cmd) use ($commande_refs, $commande_thirdparty) {
+	if (!isset($commande_refs[$fk_cmd])) {
+		return '';
+	}
+	$ref = $commande_refs[$fk_cmd];
+	$soc = isset($commande_thirdparty[$fk_cmd]) ? $commande_thirdparty[$fk_cmd] : '';
+	return $soc !== '' ? $ref.' - '.$soc : $ref;
+};
 
 // Dominant commande per UM (first colis)
 $um_commande = array();
@@ -296,7 +308,7 @@ $mpl_avg_mm   = ($mpl_upper_mm + $mpl_lower_mm) / 2;
 $pdf = pdf_getInstance(array(210, 297), 'mm', 'A4');
 $pdf->SetCreator('Dolibarr '.DOL_VERSION);
 $pdf->SetAuthor(empty($mysoc->name) ? '' : $mysoc->name);
-$pdf->SetTitle($langs->trans('PlanchargementChargement').' '.$object->ref);
+$pdf->SetTitle($langs->transnoentities('PlanchargementChargement').' '.$object->ref);
 $pdf->SetAutoPageBreak(0, 0);
 $pdf->AddPage('P', 'A4');
 $pdf->SetMargins(10, 10, 10);
@@ -310,16 +322,16 @@ $usable_h = $page_h - 2 * $margin;   // 277 mm
 // ---- Header block ----
 $pdf->SetFont('helvetica', 'B', 14);
 $pdf->SetXY($margin, $margin);
-$pdf->Cell($usable_w, 7, $langs->trans('PlanchargementChargement').' : '.$object->ref, 0, 1, 'L');
+$pdf->Cell($usable_w, 7, $langs->transnoentities('PlanchargementChargement').' : '.$object->ref, 0, 1, 'L');
 
 $pdf->SetFont('helvetica', '', 9);
 $header_y = $pdf->GetY() + 1;
 $pdf->SetXY($margin, $header_y);
 $date_str = $object->date_chargement > 0 ? dol_print_date($object->date_chargement, 'day') : '-';
 $cols = array();
-$cols[] = $langs->trans('PlanchargementDateChargement').' : '.$date_str;
-$cols[] = $langs->trans('PlanchargementCamionType').' : '.(empty($ct->ref) ? '-' : $ct->ref);
-$cols[] = $langs->trans('PlanchargementPlanTruckDims').' : '.$truck_len.' x '.$truck_wid.' x '.$truck_hei.' mm';
+$cols[] = $langs->transnoentities('PlanchargementDateChargement').' : '.$date_str;
+$cols[] = $langs->transnoentities('PlanchargementCamionType').' : '.(empty($ct->ref) ? '-' : $ct->ref);
+$cols[] = $langs->transnoentities('PlanchargementPlanTruckDims').' : '.$truck_len.' x '.$truck_wid.' x '.$truck_hei.' mm';
 $pdf->Cell($usable_w, 5, implode('     |     ', $cols), 0, 1, 'L');
 
 // ---- Stats bar ----
@@ -331,12 +343,12 @@ if ($charge_utile > 0) {
 	$weight_str .= ' / '.price2num($charge_utile, 'MT').' kg';
 }
 $mpl_str = number_format($mpl_avg_mm / 1000, 2).' m '
-	.'('.$langs->trans('PlanchargementPlanMplUpper').' '.number_format($mpl_upper_mm / 1000, 2).' m'
-	.' / '.$langs->trans('PlanchargementPlanMplLower').' '.number_format($mpl_lower_mm / 1000, 2).' m)';
+	.'('.$langs->transnoentities('PlanchargementPlanMplUpper').' '.number_format($mpl_upper_mm / 1000, 2).' m'
+	.' / '.$langs->transnoentities('PlanchargementPlanMplLower').' '.number_format($mpl_lower_mm / 1000, 2).' m)';
 $stats = array();
-$stats[] = $nb_um_placed.'/'.$nb_um_total.' '.$langs->trans('PlanchargementPlanUmPlaced');
-$stats[] = $langs->trans('Weight').' : '.$weight_str;
-$stats[] = $langs->trans('PlanchargementPlanMpl').' : '.$mpl_str;
+$stats[] = $nb_um_placed.'/'.$nb_um_total.' '.$langs->transnoentities('PlanchargementPlanUmPlaced');
+$stats[] = $langs->transnoentities('Weight').' : '.$weight_str;
+$stats[] = $langs->transnoentities('PlanchargementPlanMpl').' : '.$mpl_str;
 $pdf->SetFillColor(248, 249, 250);
 $pdf->SetDrawColor(222, 226, 230);
 $pdf->Rect($margin, $stats_y, $usable_w, 6, 'DF');
@@ -347,7 +359,8 @@ $pdf->Cell($usable_w - 4, 5, implode('     -     ', $stats), 0, 1, 'L');
 $draw_top    = $stats_y + 6 + 4; // below stats + gap
 $draw_bottom = $page_h - $margin - 4;
 $draw_h_max  = $draw_bottom - $draw_top;
-$draw_w_max  = $usable_w - 10; // reserve left margin for ruler / labels
+$tractor_w_mm = 22; // horizontal space reserved for the tractor schematic
+$draw_w_max  = $usable_w - 10 - $tractor_w_mm; // reserve left margin + tractor
 
 // Compute scale so top view + 2 side views (when hei > 0) fit.
 $gap_views   = 4;    // mm between the 3 views
@@ -363,8 +376,8 @@ $top_w_mm    = $truck_len * $scale;
 $top_h_mm    = $truck_wid * $scale;
 $side_h_mm   = $truck_hei * $scale;
 
-// Horizontal centering in usable area
-$draw_x = $margin + 5 + (($draw_w_max - $top_w_mm) / 2);
+// Horizontal centering in the remaining area (after tractor column)
+$draw_x = $margin + 5 + $tractor_w_mm + (($draw_w_max - $top_w_mm) / 2);
 
 $y_cursor = $draw_top;
 
@@ -408,12 +421,85 @@ $draw_um_rect = function ($pdf, $x, $y, $w, $h, $rgb, $label) {
 	$pdf->SetTextColor(0, 0, 0);
 };
 
+// Rough tractor schematic (top view) drawn inside the [x, y, w, h] box,
+// preserving its 240x100 aspect and right-aligned so the 5th wheel (hitch)
+// touches the trailer's left edge. Same style as tpl/plan.tpl.php.
+$draw_tractor_top = function ($pdf, $x, $y, $w, $h) {
+	$vw = 240; $vh = 100;
+	$s = min($w / $vw, $h / $vh);
+	if ($s <= 0) {
+		return;
+	}
+	$dw = $vw * $s; $dh = $vh * $s;
+	$ox = $x + $w - $dw;         // right-aligned (hitch touches trailer)
+	$oy = $y + ($h - $dh) / 2;   // vertically centered on the view
+	$pdf->SetLineWidth(0.2);
+	// chassis
+	$pdf->SetFillColor(149, 165, 166);
+	$pdf->SetDrawColor(44, 62, 80);
+	$pdf->Rect($ox + 20 * $s, $oy + 35 * $s, 210 * $s, 30 * $s, 'DF');
+	// cab
+	$pdf->SetFillColor(52, 73, 94);
+	$pdf->Rect($ox + 20 * $s, $oy + 10 * $s, 75 * $s, 80 * $s, 'DF');
+	// wheels (4 rear tandem + 2 front)
+	$pdf->SetFillColor(44, 62, 80);
+	$pdf->Rect($ox + 35 * $s,  $oy + 0 * $s,  18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 35 * $s,  $oy + 86 * $s, 18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 140 * $s, $oy + 0 * $s,  18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 140 * $s, $oy + 86 * $s, 18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 165 * $s, $oy + 0 * $s,  18 * $s, 14 * $s, 'F');
+	$pdf->Rect($ox + 165 * $s, $oy + 86 * $s, 18 * $s, 14 * $s, 'F');
+	// 5th wheel (hitch) circle
+	$pdf->SetFillColor(127, 140, 141);
+	$pdf->SetDrawColor(44, 62, 80);
+	$pdf->Ellipse($ox + 205 * $s, $oy + 50 * $s, 8 * $s, 8 * $s, 0, 0, 360, 'DF');
+};
+
+// Rough tractor schematic (side view). Aligned to the bottom of the view so
+// wheels sit on the same ground line as the trailer.
+$draw_tractor_side = function ($pdf, $x, $y, $w, $h) {
+	$vw = 240; $vh = 100;
+	$s = min($w / $vw, $h / $vh);
+	if ($s <= 0) {
+		return;
+	}
+	$dw = $vw * $s; $dh = $vh * $s;
+	$ox = $x + $w - $dw;   // right-aligned (rear touches trailer)
+	$oy = $y + $h - $dh;   // bottom-aligned (wheels on ground line)
+	$pdf->SetLineWidth(0.2);
+	// chassis beam
+	$pdf->SetFillColor(149, 165, 166);
+	$pdf->SetDrawColor(44, 62, 80);
+	$pdf->Rect($ox + 40 * $s, $oy + 62 * $s, 190 * $s, 12 * $s, 'DF');
+	// cab polygon (hood + windshield + cabin silhouette)
+	$pdf->SetFillColor(52, 73, 94);
+	$poly = array(
+		$ox + 5 * $s,   $oy + 75 * $s,
+		$ox + 5 * $s,   $oy + 45 * $s,
+		$ox + 50 * $s,  $oy + 45 * $s,
+		$ox + 60 * $s,  $oy + 22 * $s,
+		$ox + 105 * $s, $oy + 22 * $s,
+		$ox + 105 * $s, $oy + 75 * $s,
+	);
+	$pdf->Polygon($poly, 'DF');
+	// wheels (3 tires with hubs)
+	$pdf->SetFillColor(44, 62, 80);
+	$pdf->Ellipse($ox + 30 * $s,  $oy + 82 * $s, 13 * $s, 13 * $s, 0, 0, 360, 'F');
+	$pdf->Ellipse($ox + 170 * $s, $oy + 82 * $s, 13 * $s, 13 * $s, 0, 0, 360, 'F');
+	$pdf->Ellipse($ox + 200 * $s, $oy + 82 * $s, 13 * $s, 13 * $s, 0, 0, 360, 'F');
+	$pdf->SetFillColor(127, 140, 141);
+	$pdf->Ellipse($ox + 30 * $s,  $oy + 82 * $s, 5 * $s, 5 * $s, 0, 0, 360, 'F');
+	$pdf->Ellipse($ox + 170 * $s, $oy + 82 * $s, 5 * $s, 5 * $s, 0, 0, 360, 'F');
+	$pdf->Ellipse($ox + 200 * $s, $oy + 82 * $s, 5 * $s, 5 * $s, 0, 0, 360, 'F');
+};
+
 // ---- UPPER SIDE VIEW ----
 if ($truck_hei > 0) {
 	$pdf->SetFont('helvetica', 'B', 8);
 	$pdf->SetTextColor(44, 62, 80);
 	$pdf->SetXY($draw_x, $y_cursor - 3);
-	$pdf->Cell($top_w_mm, 3, $langs->trans('PlanchargementPlanSideViewUpper'), 0, 0, 'L');
+	$pdf->Cell($top_w_mm, 3, $langs->transnoentities('PlanchargementPlanSideViewUpper'), 0, 0, 'L');
+	$draw_tractor_side($pdf, $draw_x - $tractor_w_mm, $y_cursor, $tractor_w_mm - 2, $side_h_mm);
 	$draw_grid($pdf, $draw_x, $y_cursor, $top_w_mm, $side_h_mm);
 
 	foreach ($object->lines as $um) {
@@ -455,15 +541,16 @@ if ($truck_hei > 0) {
 $pdf->SetFont('helvetica', 'B', 8);
 $pdf->SetTextColor(44, 62, 80);
 $pdf->SetXY($draw_x, $y_cursor - 3);
-$pdf->Cell($top_w_mm, 3, $langs->trans('PlanchargementPlanTopView'), 0, 0, 'L');
+$pdf->Cell($top_w_mm, 3, $langs->transnoentities('PlanchargementPlanTopView'), 0, 0, 'L');
 // Axis labels at left/right
 $pdf->SetFont('helvetica', 'I', 7);
 $pdf->SetTextColor(127, 140, 141);
 $pdf->SetXY($draw_x - 8, $y_cursor + ($top_h_mm / 2) - 1.5);
-$pdf->Cell(7, 3, $langs->trans('PlanchargementPlanTablier'), 0, 0, 'R');
+$pdf->Cell(7, 3, $langs->transnoentities('PlanchargementPlanTablier'), 0, 0, 'R');
 $pdf->SetXY($draw_x + $top_w_mm + 1, $y_cursor + ($top_h_mm / 2) - 1.5);
-$pdf->Cell(7, 3, $langs->trans('PlanchargementPlanPorte'), 0, 0, 'L');
+$pdf->Cell(7, 3, $langs->transnoentities('PlanchargementPlanPorte'), 0, 0, 'L');
 
+$draw_tractor_top($pdf, $draw_x - $tractor_w_mm, $y_cursor, $tractor_w_mm - 2, $top_h_mm);
 $draw_grid($pdf, $draw_x, $y_cursor, $top_w_mm, $top_h_mm);
 
 // Draw each placed (non-child) UM
@@ -494,7 +581,8 @@ if ($truck_hei > 0) {
 	$pdf->SetFont('helvetica', 'B', 8);
 	$pdf->SetTextColor(44, 62, 80);
 	$pdf->SetXY($draw_x, $y_cursor - 3);
-	$pdf->Cell($top_w_mm, 3, $langs->trans('PlanchargementPlanSideViewLower'), 0, 0, 'L');
+	$pdf->Cell($top_w_mm, 3, $langs->transnoentities('PlanchargementPlanSideViewLower'), 0, 0, 'L');
+	$draw_tractor_side($pdf, $draw_x - $tractor_w_mm, $y_cursor, $tractor_w_mm - 2, $side_h_mm);
 	$draw_grid($pdf, $draw_x, $y_cursor, $top_w_mm, $side_h_mm);
 
 	foreach ($object->lines as $um) {
@@ -539,16 +627,18 @@ $pdf->SetXY($margin, $legend_y);
 $legend_parts = array();
 foreach ($commande_refs as $fk => $ref) {
 	$rgb = $hex_to_rgb($commande_colors[$fk]);
-	$legend_parts[] = array('rgb' => $rgb, 'text' => $ref);
+	$legend_parts[] = array('rgb' => $rgb, 'text' => $commande_label($fk));
 }
+$legend_col_w  = 55;
+$legend_max_x  = $page_w - $margin - $legend_col_w;
 $lx = $margin;
 foreach ($legend_parts as $lp) {
 	$pdf->SetFillColor($lp['rgb'][0], $lp['rgb'][1], $lp['rgb'][2]);
 	$pdf->Rect($lx, $legend_y, 3, 3, 'F');
 	$pdf->SetXY($lx + 4, $legend_y - 0.5);
-	$pdf->Cell(30, 3, $lp['text'], 0, 0, 'L');
-	$lx += 4 + 30;
-	if ($lx > $page_w - $margin - 35) {
+	$pdf->Cell($legend_col_w - 4, 3, dol_trunc($lp['text'], 32), 0, 0, 'L');
+	$lx += $legend_col_w;
+	if ($lx > $legend_max_x) {
 		break;
 	}
 }
@@ -564,7 +654,7 @@ $pdf->AddPage('P', 'A4');
 $pdf->SetFont('helvetica', 'B', 13);
 $pdf->SetTextColor(44, 62, 80);
 $pdf->SetXY($margin, $margin);
-$pdf->Cell($usable_w, 7, $langs->trans('PlanchargementPlanUmContents').' - '.$object->ref, 0, 1, 'L');
+$pdf->Cell($usable_w, 7, $langs->transnoentities('PlanchargementPlanUmContents').' - '.$object->ref, 0, 1, 'L');
 
 // Column layout (single column, full width) — UM blocks flow top-down
 $col_x = $margin;
@@ -581,7 +671,7 @@ foreach ($object->lines as $um) {
 	$u_wid = ($rot === 90) ? (int) $ut->longueur : (int) $ut->largeur;
 
 	$cmd_id    = isset($um_commande[$um->id]) ? $um_commande[$um->id] : 0;
-	$cmd_label = isset($commande_refs[$cmd_id]) ? $commande_refs[$cmd_id] : '';
+	$cmd_label = $commande_label($cmd_id);
 	$color_hex = isset($commande_colors[$cmd_id]) ? $commande_colors[$cmd_id] : '#95a5a6';
 	$rgb       = $hex_to_rgb($color_hex);
 
@@ -629,12 +719,13 @@ foreach ($object->lines as $um) {
 			$left .= '   (gerb. '.$parent_um->ref_um.')';
 		}
 	}
+	$right_w = 80;
 	$pdf->SetXY($col_x + 6, $header_y + 0.8);
-	$pdf->Cell($col_w - 50, 5, $left, 0, 0, 'L');
-	// right text: commande ref
+	$pdf->Cell($col_w - $right_w - 8, 5, $left, 0, 0, 'L');
+	// right text: commande ref + tiers
 	$pdf->SetFont('helvetica', '', 8);
-	$pdf->SetXY($col_x + $col_w - 44, $header_y + 0.8);
-	$pdf->Cell(42, 5, $cmd_label, 0, 0, 'R');
+	$pdf->SetXY($col_x + $col_w - $right_w - 2, $header_y + 0.8);
+	$pdf->Cell($right_w, 5, dol_trunc($cmd_label, 48), 0, 0, 'R');
 	$pdf->SetY($header_y + 6);
 
 	// --- Colis / items list ---
@@ -642,19 +733,19 @@ foreach ($object->lines as $um) {
 		$pdf->SetFont('helvetica', 'I', 8);
 		$pdf->SetTextColor(127, 140, 141);
 		$pdf->SetX($col_x + 3);
-		$pdf->Cell($col_w - 3, 5, '- '.$langs->trans('PlanchargementPlanNoColis'), 0, 1, 'L');
+		$pdf->Cell($col_w - 3, 5, '- '.$langs->transnoentities('PlanchargementPlanNoColis'), 0, 1, 'L');
 	} else {
 		foreach ($um->colis as $c) {
 			$cp        = isset($packages_cache[(int) $c->fk_package]) ? $packages_cache[(int) $c->fk_package] : null;
 			$c_items   = $cp ? $cp->items : array();
 			$c_section = $pkg_section($cp);
-			$c_cmd     = isset($commande_refs[(int) $c->fk_commande]) ? $commande_refs[(int) $c->fk_commande] : '';
+			$c_cmd     = $commande_label((int) $c->fk_commande);
 
 			// Colis line
 			$pdf->SetFont('helvetica', 'B', 8);
 			$pdf->SetTextColor(44, 62, 80);
 			$pdf->SetX($col_x + 3);
-			$line = '- '.$langs->trans('PlanchargementColis').' #'.(int) $c->fk_package.'  x'.(int) $c->quantity;
+			$line = '- '.$langs->transnoentities('PlanchargementColis').' #'.(int) $c->fk_package.'  x'.(int) $c->quantity;
 			if ($c_section !== '') {
 				$line .= '   '.dol_trunc($c_section, 60);
 			}
